@@ -11,6 +11,11 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 public class GraveHandler implements Listener {
 
     private boolean claimGrave(Player player, Grave grave) {
+        if (player.getUniqueId().equals(grave.player)) {
+            grave.location.getWorld().getEntity(grave.display).remove();
+            GraveSerializer.removeGrave(grave.location);
+            return true;
+        }
         return false;
     }
 

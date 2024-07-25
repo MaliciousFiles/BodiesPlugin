@@ -48,10 +48,7 @@ public class GraveSerializer {
 
     public static void deserialize() {
         configFile = new File(GravestonePlugin.instance.getDataFolder(), "graves.yml");
-        if (!configFile.exists()) {
-            if (!configFile.getParentFile().mkdirs()) throw new RuntimeException();
-            GravestonePlugin.instance.saveResource("graves.yml", false);
-        }
+        if (!configFile.exists()) return;
 
         FileConfiguration graveConfig = new YamlConfiguration();
         try {

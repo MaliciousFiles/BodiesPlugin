@@ -13,6 +13,7 @@ public final class GravestonePlugin extends JavaPlugin {
         GraveSerializer.deserialize();
 
         getServer().getPluginManager().registerEvents(new GraveGenerator(), this);
+        getServer().getPluginManager().registerEvents(new GraveHandler(), this);
     }
 
     @Override
