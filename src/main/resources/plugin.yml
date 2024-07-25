@@ -1,0 +1,6 @@
+name: Gravestone
+version: '${project.version}'
+main: io.github.maliciousfiles.gravestone.Gravestone
+api-version: '1.21'
+authors: [MaliciousFiles]
+description: Stores items on player death
