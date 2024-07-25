@@ -2,9 +2,9 @@ package io.github.maliciousfiles.gravestone;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class Gravestone extends JavaPlugin {
+public final class GravestonePlugin extends JavaPlugin {
 
-    public static Gravestone instance;
+    public static GravestonePlugin instance;
 
     @Override
     public void onEnable() {

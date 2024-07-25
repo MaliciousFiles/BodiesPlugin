@@ -4,7 +4,6 @@ import org.bukkit.Location;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.event.Listener;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,10 +47,10 @@ public class GraveSerializer {
     }
 
     public static void deserialize() {
-        configFile = new File(Gravestone.instance.getDataFolder(), "graves.yml");
+        configFile = new File(GravestonePlugin.instance.getDataFolder(), "graves.yml");
         if (!configFile.exists()) {
             if (!configFile.getParentFile().mkdirs()) throw new RuntimeException();
-            Gravestone.instance.saveResource("graves.yml", false);
+            GravestonePlugin.instance.saveResource("graves.yml", false);
         }
 
         FileConfiguration graveConfig = new YamlConfiguration();
