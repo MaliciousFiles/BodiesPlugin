@@ -1,0 +1,6 @@
+name: Bodies
+version: '${version}'
+main: io.github.maliciousfiles.bodiesplugin.BodiesPlugin
+api-version: '1.21'
+authors: [MaliciousFiles]
+description: Spawns a body containing all your items on death
