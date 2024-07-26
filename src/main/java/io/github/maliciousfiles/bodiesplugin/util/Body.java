@@ -7,11 +7,13 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.util.Mth;
@@ -21,6 +23,7 @@ import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.level.GameType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Marker;
@@ -32,21 +35,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.UUID;
+import java.util.*;
 
 public class Body {
-    //private Marker marker;
-    public Location loc;
+    private final List<Packet<? super ClientGamePacketListener>> spawnPackets = new ArrayList<>();
 
-    public void spawn(Player player) {
-        ServerPlayer sp = ((CraftPlayer) player).getHandle();
+    public Body(Location loc, UUID dead) {
+        ServerLevel level = ((CraftWorld) loc.getWorld()).getHandle();
 
-        ServerPlayer fakePlayer = new ServerPlayer(sp.getServer(),
-                sp.serverLevel(), new GameProfile(
-                        UUID.fromString("f0c7f7bb-7407-4dd7-9230-e074ed7c335d"), ""),
-//                        sp.gameProfile.getId(), sp.gameProfile.getName()),
+        ServerPlayer fakePlayer = new ServerPlayer(level.getServer(),
+                level, new GameProfile(dead, ""),
                 ClientInformation.createDefault());
 
         fakePlayer.setUUID(UUID.randomUUID());
@@ -56,27 +54,32 @@ public class Body {
         fakePlayer.setYHeadRot(fakePlayer.getYRot());
         fakePlayer.setPose(Pose.SLEEPING);
 
-        sp.connection.send(new ClientboundPlayerInfoUpdatePacket(
+        spawnPackets.add(new ClientboundPlayerInfoUpdatePacket(
                 EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER),
                 new ClientboundPlayerInfoUpdatePacket.Entry(
                         fakePlayer.getUUID(), fakePlayer.getGameProfile(), false, 0,
                         GameType.CREATIVE, fakePlayer.getDisplayName(), null)));
 
-        sp.connection.send(new ClientboundAddEntityPacket(
+        spawnPackets.add(new ClientboundAddEntityPacket(
                 fakePlayer.getId(),
                 fakePlayer.getUUID(),
-                fakePlayer.getX() - Mth.sin((float) Math.toRadians(loc.getYaw())), fakePlayer.getY(), fakePlayer.getZ() + Mth.cos((float) Math.toRadians(loc.getYaw())),
+                fakePlayer.getX() - Mth.sin((float) Math.toRadians(loc.getYaw())), fakePlayer.getY()+0.125, fakePlayer.getZ() + Mth.cos((float) Math.toRadians(loc.getYaw())),
                 fakePlayer.getXRot(), fakePlayer.getYRot(),
                 fakePlayer.getType(), 0,
                 fakePlayer.getDeltaMovement(), fakePlayer.getYHeadRot()
         ));
 
         SynchedEntityData data = fakePlayer.getEntityData();
-        sp.connection.send(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.getNonDefaultValues()));
+        data.set(ServerPlayer.DATA_PLAYER_MODE_CUSTOMISATION, Byte.MAX_VALUE);
+        spawnPackets.add(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.getNonDefaultValues()));
+    }
+
+    public void spawn(Player player) {
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(spawnPackets));
     }
 
     // adjusted from https://github.com/ShaneBeee/NMS-API/blob/master/src/main/java/com/shanebeestudios/nms/api/util/McUtils.java#L361
-    public static void setSkin(GameProfile gameProfile) {
+    private static void setSkin(GameProfile gameProfile) {
         try {
             URL url = new URI("https://sessionserver.mojang.com/session/minecraft/profile/" + gameProfile.getId().toString() + "?unsigned=false").toURL();
             InputStreamReader reader = new InputStreamReader(url.openStream(), StandardCharsets.UTF_8);

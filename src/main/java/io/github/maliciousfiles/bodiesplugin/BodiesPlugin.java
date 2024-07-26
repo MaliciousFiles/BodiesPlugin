@@ -20,6 +20,7 @@ public final class BodiesPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
+        BodySerializer.deserialize();
         getServer().getPluginManager().registerEvents(new BodyGenerator(), this);
     }
 
