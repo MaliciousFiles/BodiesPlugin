@@ -1,5 +1,6 @@
 package io.github.maliciousfiles.bodiesplugin.listeners;
 
+import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.util.Body;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
@@ -16,7 +17,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -63,7 +66,16 @@ public class BodyGenerator implements Listener {
         textDisplay.setAlignment(TextDisplay.TextAlignment.CENTER);
         textDisplay.text(evt.deathMessage());
 
+        ItemStack[] contents = evt.getPlayer().getInventory().getContents();
+        for (int i = 0; i < contents.length; i++) {
+            if (!evt.getDrops().contains(contents[i])) contents[i] = null;
+        }
+        evt.getDrops().clear();
+
+
         BodySerializer.addBody(new BodySerializer.BodyInfo(evt.getPlayer().getUniqueId(),
-                evt.getPlayer().getLocation(), interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body));
+                evt.getPlayer().getLocation(), contents, evt.getDroppedExp(), interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body));
+
+        evt.setDroppedExp(0);
     }
 }

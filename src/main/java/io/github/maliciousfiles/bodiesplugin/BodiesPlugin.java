@@ -23,6 +23,9 @@ public final class BodiesPlugin extends JavaPlugin {
         instance = this;
 
         ConfigurationSerialization.registerClass(BodySerializer.BodyInfo.class);
+        ConfigurationSerialization.registerClass(SettingsSerializer.PlayerSettings.class);
+
+        SettingsSerializer.deserialize();
         BodySerializer.deserialize();
 
         getServer().getPluginManager().registerEvents(new BodyGenerator(), this);

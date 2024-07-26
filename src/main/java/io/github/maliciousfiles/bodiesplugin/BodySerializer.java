@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Interaction;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,19 +76,23 @@ public class BodySerializer {
     public static class BodyInfo implements ConfigurationSerializable {
         public final UUID player;
         public final Location loc;
+        public final ItemStack[] items;
+        public final int exp;
         public final UUID[] interactions;
         public final UUID textDisplay;
         public final long timestamp;
         public final Body body;
 
 
-        public BodyInfo(UUID player, Location loc, UUID[] interactions, UUID textDisplay, long timestamp) {
-            this(player, loc, interactions, textDisplay, timestamp, new Body(loc, player));
+        public BodyInfo(UUID player, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp) {
+            this(player, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player));
         }
 
-        public BodyInfo(UUID player, Location loc, UUID[] interactions, UUID textDisplay, long timestamp, Body body) {
+        public BodyInfo(UUID player, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body) {
             this.player = player;
             this.loc = loc;
+            this.items = items;
+            this.exp = exp;
             this.interactions = interactions;
             this.textDisplay = textDisplay;
             this.timestamp = timestamp;
@@ -96,11 +101,25 @@ public class BodySerializer {
 
         @Override
         public Map<String, Object> serialize() {
-            return Map.of("player", player.toString(), "loc", loc, "interactions", Arrays.stream(interactions).map(UUID::toString).toArray(), "textDisplay", textDisplay.toString(), "timestamp", timestamp);
+            return Map.of(
+                    "player", player.toString(),
+                    "loc", loc,
+                    "items", items,
+                    "exp", exp,
+                    "interactions", Arrays.stream(interactions).map(UUID::toString).toArray(),
+                    "textDisplay", textDisplay.toString(),
+                    "timestamp", timestamp);
         }
 
         public static BodyInfo deserialize(Map<String, Object> map) {
-            return new BodyInfo(UUID.fromString((String) map.get("player")), (Location) map.get("loc"), ((List<String>) map.get("interactions")).stream().map(UUID::fromString).toArray(UUID[]::new), UUID.fromString((String) map.get("textDisplay")), (long) map.get("timestamp"));
+            return new BodyInfo(
+                    UUID.fromString((String) map.get("player")),
+                    (Location) map.get("loc"),
+                    ((List<ItemStack>) map.get("items")).toArray(ItemStack[]::new),
+                    (int) map.get("exp"),
+                    ((List<String>) map.get("interactions")).stream().map(UUID::fromString).toArray(UUID[]::new),
+                    UUID.fromString((String) map.get("textDisplay")),
+                    (long) map.get("timestamp"));
         }
     }
 }
