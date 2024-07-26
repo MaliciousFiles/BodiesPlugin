@@ -26,7 +26,8 @@ public class BodyGenerator implements Listener {
     public void onJoin(PlayerJoinEvent evt) {
         ServerPlayer sp = ((CraftPlayer) evt.getPlayer()).getHandle();
 
-//        sp.connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(TEAM, false));
+        sp.connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(TEAM, false));
+        sp.connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(TEAM, true));
     }
 
     @EventHandler

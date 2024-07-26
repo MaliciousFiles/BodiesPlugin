@@ -2,6 +2,7 @@ package io.github.maliciousfiles.bodiesplugin.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.mojang.authlib.Environment;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
@@ -13,6 +14,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.ChatVisiblity;
@@ -43,13 +45,15 @@ public class Body {
 
         ServerPlayer fakePlayer = new ServerPlayer(sp.getServer(),
                 sp.serverLevel(), new GameProfile(
-//                        UUID.fromString("4f393528-e106-4139-b67c-4d64f3a620d3"), "Brainpower5"),
-                        UUID.randomUUID(), sp.gameProfile.getName()),
+                        UUID.fromString("f0c7f7bb-7407-4dd7-9230-e074ed7c335d"), ""),
+//                        sp.gameProfile.getId(), sp.gameProfile.getName()),
                 ClientInformation.createDefault());
 
-        setSkin(sp.getUUID(), fakePlayer.gameProfile);
-        fakePlayer.setPos(CraftLocation.toVec3D(/*marker.getLocation()*/loc));
-        fakePlayer.setRot(loc.getYaw(), loc.getPitch());
+        fakePlayer.setUUID(UUID.randomUUID());
+        setSkin(fakePlayer.gameProfile);
+        fakePlayer.setPos(CraftLocation.toVec3D(/*marker.getLocation()*/loc));;
+        fakePlayer.setYRot(-90-loc.getYaw());
+        fakePlayer.setYHeadRot(fakePlayer.getYRot());
         fakePlayer.setPose(Pose.SLEEPING);
 
         sp.connection.send(new ClientboundPlayerInfoUpdatePacket(
@@ -58,16 +62,23 @@ public class Body {
                         fakePlayer.getUUID(), fakePlayer.getGameProfile(), false, 0,
                         GameType.CREATIVE, fakePlayer.getDisplayName(), null)));
 
-        sp.connection.send(fakePlayer.getAddEntityPacket(sp.tracker.serverEntity));
+        sp.connection.send(new ClientboundAddEntityPacket(
+                fakePlayer.getId(),
+                fakePlayer.getUUID(),
+                fakePlayer.getX() - Mth.sin((float) Math.toRadians(loc.getYaw())), fakePlayer.getY(), fakePlayer.getZ() + Mth.cos((float) Math.toRadians(loc.getYaw())),
+                fakePlayer.getXRot(), fakePlayer.getYRot(),
+                fakePlayer.getType(), 0,
+                fakePlayer.getDeltaMovement(), fakePlayer.getYHeadRot()
+        ));
 
         SynchedEntityData data = fakePlayer.getEntityData();
         sp.connection.send(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.getNonDefaultValues()));
     }
 
     // adjusted from https://github.com/ShaneBeee/NMS-API/blob/master/src/main/java/com/shanebeestudios/nms/api/util/McUtils.java#L361
-    public static void setSkin(UUID uuid, GameProfile gameProfile) {
+    public static void setSkin(GameProfile gameProfile) {
         try {
-            URL url = new URI("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid.toString() + "?unsigned=false").toURL();
+            URL url = new URI("https://sessionserver.mojang.com/session/minecraft/profile/" + gameProfile.getId().toString() + "?unsigned=false").toURL();
             InputStreamReader reader = new InputStreamReader(url.openStream(), StandardCharsets.UTF_8);
             JsonObject mainObject = new Gson().fromJson(reader, JsonObject.class);
             if (mainObject == null) return;
@@ -75,8 +86,8 @@ public class Body {
             JsonObject properties = mainObject.get("properties").getAsJsonArray().get(0).getAsJsonObject();
             String value = properties.get("value").getAsString();
             String signature = properties.get("signature").getAsString();
-            BodiesPlugin.log(value);
-            BodiesPlugin.log(signature);
+//            BodiesPlugin.log(value);
+//            BodiesPlugin.log(signature);
 
             PropertyMap propertyMap = gameProfile.getProperties();
             propertyMap.put("name", new Property("name", gameProfile.getName()));
