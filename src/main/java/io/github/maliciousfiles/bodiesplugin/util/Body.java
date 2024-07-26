@@ -43,11 +43,11 @@ public class Body {
 
         ServerPlayer fakePlayer = new ServerPlayer(sp.getServer(),
                 sp.serverLevel(), new GameProfile(
-                        //UUID.fromString("4f393528-e106-4139-b67c-4d64f3a620d3"), "Brainpower5"),
+//                        UUID.fromString("4f393528-e106-4139-b67c-4d64f3a620d3"), "Brainpower5"),
                         UUID.randomUUID(), sp.gameProfile.getName()),
                 ClientInformation.createDefault());
 
-        setSkin(UUID.fromString("4f393528-e106-4139-b67c-4d64f3a620d3"), fakePlayer.gameProfile);
+        setSkin(sp.getUUID(), fakePlayer.gameProfile);
         fakePlayer.setPos(CraftLocation.toVec3D(/*marker.getLocation()*/loc));
         fakePlayer.setRot(loc.getYaw(), loc.getPitch());
         fakePlayer.setPose(Pose.SLEEPING);
@@ -75,6 +75,8 @@ public class Body {
             JsonObject properties = mainObject.get("properties").getAsJsonArray().get(0).getAsJsonObject();
             String value = properties.get("value").getAsString();
             String signature = properties.get("signature").getAsString();
+            BodiesPlugin.log(value);
+            BodiesPlugin.log(signature);
 
             PropertyMap propertyMap = gameProfile.getProperties();
             propertyMap.put("name", new Property("name", gameProfile.getName()));
