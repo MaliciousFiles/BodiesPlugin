@@ -5,6 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Interaction;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,17 +15,15 @@ import java.util.*;
 public class BodySerializer {
     private static File configFile;
 
-    private static Map<UUID, List<BodyInfo>> playerMap;
-    private static Map<UUID, BodyInfo> interactionMap;
-    private static Map<BodyInfo, Body> bodies;
-
-    public static Body getBody(BodyInfo info) {
-        if (!bodies.containsKey(info)) bodies.put(info, new Body(info.loc, info.player));
-        return bodies.get(info);
-    }
+    private static final Map<UUID, List<BodyInfo>> playerMap = new HashMap<>();
+    private static final Map<UUID, BodyInfo> interactionMap = new HashMap<>();
 
     public static List<BodyInfo> getAllBodies() {
         return playerMap.values().stream().reduce(new ArrayList<>(), (a, b) -> { a.addAll(b); return a; });
+    }
+
+    public static BodyInfo getBody(Interaction interaction) {
+        return interactionMap.get(interaction.getUniqueId());
     }
 
     public static void addBody(BodyInfo info) {
@@ -63,17 +63,44 @@ public class BodySerializer {
         try {
             config.load(configFile);
         } catch (IOException | InvalidConfigurationException e) { return; }
+        for (String key : config.getKeys(false)) {
+            for (Object obj : Objects.requireNonNull(config.getList(key))) {
+                if (!(obj instanceof BodyInfo bi)) return;
 
-        for (String uuid : config.getKeys(false)) {
-            List<BodyInfo> list = new ArrayList<>();
-            for (Object obj : Objects.requireNonNull(config.getList(uuid))) {
-                if (!(obj instanceof BodyInfo)) return;
-                list.add((BodyInfo) obj);
+                addBody(bi);
             }
-
-            playerMap.put(UUID.fromString(uuid), list);
         }
     }
 
-    public record BodyInfo(UUID player, Location loc, UUID[] interactions, long timestamp) { }
+    public static class BodyInfo implements ConfigurationSerializable {
+        public final UUID player;
+        public final Location loc;
+        public final UUID[] interactions;
+        public final UUID textDisplay;
+        public final long timestamp;
+        public final Body body;
+
+
+        public BodyInfo(UUID player, Location loc, UUID[] interactions, UUID textDisplay, long timestamp) {
+            this(player, loc, interactions, textDisplay, timestamp, new Body(loc, player));
+        }
+
+        public BodyInfo(UUID player, Location loc, UUID[] interactions, UUID textDisplay, long timestamp, Body body) {
+            this.player = player;
+            this.loc = loc;
+            this.interactions = interactions;
+            this.textDisplay = textDisplay;
+            this.timestamp = timestamp;
+            this.body = body;
+        }
+
+        @Override
+        public Map<String, Object> serialize() {
+            return Map.of("player", player.toString(), "loc", loc, "interactions", Arrays.stream(interactions).map(UUID::toString).toArray(), "textDisplay", textDisplay.toString(), "timestamp", timestamp);
+        }
+
+        public static BodyInfo deserialize(Map<String, Object> map) {
+            return new BodyInfo(UUID.fromString((String) map.get("player")), (Location) map.get("loc"), ((List<String>) map.get("interactions")).stream().map(UUID::fromString).toArray(UUID[]::new), UUID.fromString((String) map.get("textDisplay")), (long) map.get("timestamp"));
+        }
+    }
 }

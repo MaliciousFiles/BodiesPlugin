@@ -39,6 +39,7 @@ import java.util.*;
 
 public class Body {
     private final List<Packet<? super ClientGamePacketListener>> spawnPackets = new ArrayList<>();
+    private final List<Packet<? super ClientGamePacketListener>> destroyPackets = new ArrayList<>();
 
     public Body(Location loc, UUID dead) {
         ServerLevel level = ((CraftWorld) loc.getWorld()).getHandle();
@@ -72,10 +73,17 @@ public class Body {
         SynchedEntityData data = fakePlayer.getEntityData();
         data.set(ServerPlayer.DATA_PLAYER_MODE_CUSTOMISATION, Byte.MAX_VALUE);
         spawnPackets.add(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.getNonDefaultValues()));
+
+        destroyPackets.add(new ClientboundRemoveEntitiesPacket(fakePlayer.getId()));
+        destroyPackets.add(new ClientboundPlayerInfoRemovePacket(List.of(fakePlayer.getUUID())));
     }
 
     public void spawn(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(spawnPackets));
+    }
+
+    public void destroy(Player player) {
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(destroyPackets));
     }
 
     // adjusted from https://github.com/ShaneBeee/NMS-API/blob/master/src/main/java/com/shanebeestudios/nms/api/util/McUtils.java#L361

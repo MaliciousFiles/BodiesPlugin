@@ -1,12 +1,14 @@
 package io.github.maliciousfiles.bodiesplugin;
 
 import io.github.maliciousfiles.bodiesplugin.listeners.BodyGenerator;
+import io.github.maliciousfiles.bodiesplugin.listeners.BodyHandler;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class BodiesPlugin extends JavaPlugin {
     public static BodiesPlugin instance;
@@ -20,8 +22,11 @@ public final class BodiesPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
+        ConfigurationSerialization.registerClass(BodySerializer.BodyInfo.class);
         BodySerializer.deserialize();
+
         getServer().getPluginManager().registerEvents(new BodyGenerator(), this);
+        getServer().getPluginManager().registerEvents(new BodyHandler(), this);
     }
 
     @Override

@@ -2,7 +2,6 @@ package io.github.maliciousfiles.bodiesplugin.listeners;
 
 import io.github.maliciousfiles.bodiesplugin.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.util.Body;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
@@ -10,7 +9,9 @@ import net.minecraft.world.scores.Team;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Interaction;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -34,7 +35,7 @@ public class BodyGenerator implements Listener {
         sp.connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(TEAM, false));
         sp.connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(TEAM, true));
 
-        BodySerializer.getAllBodies().forEach(b->BodySerializer.getBody(b).spawn(evt.getPlayer()));
+        BodySerializer.getAllBodies().forEach(b->b.body.spawn(evt.getPlayer()));
     }
 
     @EventHandler
@@ -57,7 +58,12 @@ public class BodyGenerator implements Listener {
             interactions[i] = interaction.getUniqueId();
         }
 
+        TextDisplay textDisplay = evt.getEntity().getWorld().spawn(evt.getEntity().getLocation().add(0, 0.5, 0), TextDisplay.class);
+        textDisplay.setBillboard(Display.Billboard.CENTER);
+        textDisplay.setAlignment(TextDisplay.TextAlignment.CENTER);
+        textDisplay.text(evt.deathMessage());
+
         BodySerializer.addBody(new BodySerializer.BodyInfo(evt.getPlayer().getUniqueId(),
-                evt.getPlayer().getLocation(), interactions, System.currentTimeMillis()));
+                evt.getPlayer().getLocation(), interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body));
     }
 }
