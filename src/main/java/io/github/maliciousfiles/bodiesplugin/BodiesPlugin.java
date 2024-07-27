@@ -28,10 +28,12 @@ public final class BodiesPlugin extends JavaPlugin {
 
         getCommand("bodies").setExecutor(new BodiesCommand());
         getCommand("bodies").setTabCompleter(new BodiesCommand());
+
+        BodySerializer.getAllBodies().forEach(b -> Bukkit.getOnlinePlayers().forEach(b.body::spawn));
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        BodySerializer.getAllBodies().forEach(b -> Bukkit.getOnlinePlayers().forEach(b.body::destroy));
     }
 }
