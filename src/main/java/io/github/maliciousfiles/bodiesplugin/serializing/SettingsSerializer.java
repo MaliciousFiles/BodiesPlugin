@@ -1,14 +1,14 @@
-package io.github.maliciousfiles.bodiesplugin;
+package io.github.maliciousfiles.bodiesplugin.serializing;
 
 import com.google.common.collect.ImmutableList;
+import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.concurrent.Immutable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -23,12 +23,12 @@ public class SettingsSerializer {
         return playerSettings.get(player);
     }
 
-    public static void trustPlayer(Player truster, Player trusted) {
+    public static void trustPlayer(Player truster, OfflinePlayer trusted) {
         getSettings(truster.getUniqueId()).trusted.add(trusted.getUniqueId());
         serialize();
     }
 
-    public static void untrustPlayer(Player truster, Player trusted) {
+    public static void untrustPlayer(Player truster, OfflinePlayer trusted) {
         getSettings(truster.getUniqueId()).trusted.remove(trusted.getUniqueId());
         serialize();
     }

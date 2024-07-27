@@ -4,3 +4,7 @@ main: io.github.maliciousfiles.bodiesplugin.BodiesPlugin
 api-version: '1.21'
 authors: [MaliciousFiles]
 description: Spawns a body containing all your items on death
+commands:
+  bodies:
+    description: Main command for the plugin
+    usage: /bodies

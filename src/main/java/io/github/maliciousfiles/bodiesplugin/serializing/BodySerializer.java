@@ -1,12 +1,15 @@
-package io.github.maliciousfiles.bodiesplugin;
+package io.github.maliciousfiles.bodiesplugin.serializing;
 
+import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.util.Body;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Interaction;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
@@ -21,6 +24,14 @@ public class BodySerializer {
 
     public static List<BodyInfo> getAllBodies() {
         return playerMap.values().stream().reduce(new ArrayList<>(), (a, b) -> { a.addAll(b); return a; });
+    }
+
+    public static List<BodyInfo> getBodiesForPlayer(OfflinePlayer player) {
+        return playerMap.get(player.getUniqueId());
+    }
+
+    public static List<UUID> getPlayersWithBodies() {
+        return List.copyOf(playerMap.keySet());
     }
 
     public static BodyInfo getBody(Interaction interaction) {
@@ -75,6 +86,7 @@ public class BodySerializer {
 
     public static class BodyInfo implements ConfigurationSerializable {
         public final UUID player;
+        public final String message;
         public final Location loc;
         public final ItemStack[] items;
         public final int exp;
@@ -84,12 +96,13 @@ public class BodySerializer {
         public final Body body;
 
 
-        public BodyInfo(UUID player, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp) {
-            this(player, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player));
+        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp) {
+            this(player, message, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player));
         }
 
-        public BodyInfo(UUID player, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body) {
+        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body) {
             this.player = player;
+            this.message = message;
             this.loc = loc;
             this.items = items;
             this.exp = exp;
@@ -103,6 +116,7 @@ public class BodySerializer {
         public Map<String, Object> serialize() {
             return Map.of(
                     "player", player.toString(),
+                    "message", message,
                     "loc", loc,
                     "items", items,
                     "exp", exp,
@@ -114,6 +128,7 @@ public class BodySerializer {
         public static BodyInfo deserialize(Map<String, Object> map) {
             return new BodyInfo(
                     UUID.fromString((String) map.get("player")),
+                    (String) map.get("message"),
                     (Location) map.get("loc"),
                     ((List<ItemStack>) map.get("items")).toArray(ItemStack[]::new),
                     (int) map.get("exp"),
