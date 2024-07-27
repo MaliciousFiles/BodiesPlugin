@@ -2,6 +2,7 @@ package io.github.maliciousfiles.bodiesplugin.serializing;
 
 import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.util.Body;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -35,6 +36,10 @@ public class BodySerializer {
 
     public static BodyInfo getZombieInfo(UUID zombie) {
         return zombieMap.get(zombie);
+    }
+
+    public static List<UUID> getAllZombies() {
+        return List.copyOf(zombieMap.keySet());
     }
 
     public static void removeZombie(UUID zombie) {
@@ -118,7 +123,9 @@ public class BodySerializer {
                 for (String key : config.getKeys(false)) {
                     if (!(config.get(key) instanceof BodyInfo bi)) continue;
 
-                    addZombie(UUID.fromString(key), bi, false);
+                    UUID zombie = UUID.fromString(key);
+                    bi.body.setReplacing(Bukkit.getEntity(zombie));
+                    addZombie(zombie, bi, false);
                 }
             } catch (IOException | InvalidConfigurationException ignored) { }
         }

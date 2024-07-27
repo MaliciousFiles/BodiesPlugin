@@ -3,11 +3,15 @@ package io.github.maliciousfiles.bodiesplugin.listeners;
 import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.serializing.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.serializing.SettingsSerializer;
+import io.github.maliciousfiles.bodiesplugin.util.Body;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftZombie;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
@@ -18,10 +22,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class BodyHandler implements Listener {
 
@@ -83,11 +84,19 @@ public class BodyHandler implements Listener {
     public static void spawnZombie(BodySerializer.BodyInfo body) {
         destroyBody(body);
 
-        Zombie zombie = body.loc.getWorld().spawn(body.loc, Zombie.class);
+        Zombie zombie = body.loc.getWorld().createEntity(body.loc, Zombie.class);
+
+        body.body.setReplacing(zombie);
+        BodySerializer.addZombie(zombie.getUniqueId(), body);
+
+        zombie.spawnAt(body.loc);
+
+        zombie.setShouldBurnInDay(false);
+        zombie.setCustomName(Bukkit.getOfflinePlayer(body.player).getName());
+        zombie.setCustomNameVisible(true);
+        zombie.setRemoveWhenFarAway(false);
         zombie.setAdult();
         for (EquipmentSlot slot : EquipmentSlot.values()) zombie.getEquipment().setDropChance(slot, 0);
-
-        BodySerializer.addZombie(zombie.getUniqueId(), body);
 
         zombie.getEquipment().setArmorContents(Arrays.copyOfRange(body.items, 36, 40));
 
@@ -121,7 +130,7 @@ public class BodyHandler implements Listener {
                 return;
             }
 
-            if (!body.noZombie && Math.random() < BodiesPlugin.instance.getConfig().getDouble("zombieChance")) spawnZombie(body);
+            if (!body.noZombie && Math.random() < BodiesPlugin.instance.getConfig().getDouble("zombieChance") && Arrays.stream(body.items).anyMatch(Objects::nonNull)) spawnZombie(body);
             else claimBody(evt.getPlayer(), body);
         }
     }
@@ -137,6 +146,18 @@ public class BodyHandler implements Listener {
                 body.body.glow(evt.getPlayer());
             } else {
                 body.body.deglow(evt.getPlayer());
+            }
+        }
+
+        for (UUID zombie : BodySerializer.getAllZombies()) {
+            BodySerializer.BodyInfo body = BodySerializer.getZombieInfo(zombie);
+            if (body.player != evt.getPlayer().getUniqueId()) continue;
+
+            Entity entity = Bukkit.getEntity(zombie);
+            if (entity.getLocation().distanceSquared(evt.getPlayer().getLocation()) <= radius*radius) {
+                body.body.glowZombie(evt.getPlayer());
+            } else {
+                body.body.deglowZombie(evt.getPlayer());
             }
         }
     }

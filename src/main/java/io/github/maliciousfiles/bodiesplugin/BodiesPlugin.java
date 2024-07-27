@@ -8,6 +8,7 @@ import io.github.maliciousfiles.bodiesplugin.serializing.SettingsSerializer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BodiesPlugin extends JavaPlugin {
@@ -29,7 +30,10 @@ public final class BodiesPlugin extends JavaPlugin {
         getCommand("bodies").setExecutor(new BodiesCommand());
         getCommand("bodies").setTabCompleter(new BodiesCommand());
 
-        BodySerializer.getAllBodies().forEach(b -> Bukkit.getOnlinePlayers().forEach(b.body::spawn));
+        Bukkit.getOnlinePlayers().forEach(p -> {
+            BodySerializer.getAllBodies().forEach(b -> b.body.spawn(p));
+            BodyGenerator.replaceConnection(p);
+        });
 
         saveDefaultConfig();
     }
