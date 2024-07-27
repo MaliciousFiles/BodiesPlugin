@@ -13,11 +13,13 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.level.GameType;
@@ -40,6 +42,8 @@ import java.util.*;
 public class Body {
     private final List<Packet<? super ClientGamePacketListener>> spawnPackets = new ArrayList<>();
     private final List<Packet<? super ClientGamePacketListener>> destroyPackets = new ArrayList<>();
+    private final List<Packet<? super ClientGamePacketListener>> glowPackets = new ArrayList<>();
+    private final List<Packet<? super ClientGamePacketListener>> deglowPackets = new ArrayList<>();
 
     public Body(Location loc, UUID dead) {
         ServerLevel level = ((CraftWorld) loc.getWorld()).getHandle();
@@ -72,7 +76,13 @@ public class Body {
 
         SynchedEntityData data = fakePlayer.getEntityData();
         data.set(ServerPlayer.DATA_PLAYER_MODE_CUSTOMISATION, Byte.MAX_VALUE);
-        spawnPackets.add(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.getNonDefaultValues()));
+        spawnPackets.add(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.packDirty()));
+
+        data.set(EntityDataSerializers.BYTE.createAccessor(0), (byte) 0x40);
+        glowPackets.add(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.packDirty()));
+
+        data.set(EntityDataSerializers.BYTE.createAccessor(0), (byte) 0);
+        deglowPackets.add(new ClientboundSetEntityDataPacket(fakePlayer.getId(), data.packDirty()));
 
         destroyPackets.add(new ClientboundRemoveEntitiesPacket(fakePlayer.getId()));
         destroyPackets.add(new ClientboundPlayerInfoRemovePacket(List.of(fakePlayer.getUUID())));
@@ -84,6 +94,14 @@ public class Body {
 
     public void destroy(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(destroyPackets));
+    }
+
+    public void glow(Player player) {
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(glowPackets));
+    }
+
+    public void deglow(Player player) {
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(deglowPackets));
     }
 
     // adjusted from https://github.com/ShaneBeee/NMS-API/blob/master/src/main/java/com/shanebeestudios/nms/api/util/McUtils.java#L361

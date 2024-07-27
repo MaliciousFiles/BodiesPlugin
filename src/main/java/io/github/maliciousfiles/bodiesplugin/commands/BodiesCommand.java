@@ -66,12 +66,12 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         success(sender, "  /%s %s <%s/%s> - Set whether to prioritize your body or player inventory", "bodies", "priority", "body", "player");
 
         if (sender.isOp()) {
-            success(sender, "  /bodies %s [%s] - List all bodies for a player", "bodies", "list", "player");
-            success(sender, "  /bodies %s <%s> <%s> - Get information about a player's body", "bodies", "info", "player", "id");
-            success(sender, "  /bodies %s <%s> <%s> [%s] - Remotely claim a player's body", "bodies", "claim", "player", "id", "recipient");
+            success(sender, "  /%s %s [%s] - List all bodies for a player", "bodies", "list", "player");
+            success(sender, "  /%s %s <%s> <%s> - Get information about a player's body", "bodies", "info", "player", "id");
+            success(sender, "  /%s %s <%s> <%s> [%s] - Remotely claim a player's body", "bodies", "claim", "player", "id", "recipient");
         } else {
-            success(sender, "  /bodies %s - List all your bodies", "bodies", "list");
-            success(sender, "  /bodies %s <%s> - Get information about a body", "bodies", "info", "id");
+            success(sender, "  /%s %s - List all your bodies", "bodies", "list");
+            success(sender, "  /%s %s <%s> - Get information about a body", "bodies", "info", "id");
         }
     }
 
@@ -258,14 +258,14 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
                 case "priority" -> options = List.of("body", "player");
                 case "list" -> {
                     if (player.isOp()) options = BodySerializer.getPlayersWithBodies().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList();
-                    else for (int i = 0; i < BodySerializer.getBodiesForPlayer(player).size(); i++) options.add(String.valueOf(i));
+                    else if (BodySerializer.getBodiesForPlayer(player) != null) for (int i = 0; i < BodySerializer.getBodiesForPlayer(player).size(); i++) options.add(String.valueOf(i));
                 }
                 case "claim", "info" -> { if (player.isOp()) options = BodySerializer.getPlayersWithBodies().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList(); }
             }
         } else if (args.length == 3) {
             if (player.isOp() && (args[0].equalsIgnoreCase("claim") || args[0].equalsIgnoreCase("info"))) {
                 OfflinePlayer op = Bukkit.getOfflinePlayerIfCached(args[1]);
-                if (op == null) return options;
+                if (op == null || BodySerializer.getBodiesForPlayer(op) == null) return options;
 
                 for (int i = 0; i < BodySerializer.getBodiesForPlayer(op).size(); i++) options.add(String.valueOf(i));
             }

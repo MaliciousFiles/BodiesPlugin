@@ -1,0 +1,8 @@
+# radius at which your bodies gain the glowing effect
+glowRadius: 20
+
+# chance for bodies to become zombies
+zombieChance: 0.1
+
+# allow users to claim bodies regardless of trust lists
+enableStealing: false

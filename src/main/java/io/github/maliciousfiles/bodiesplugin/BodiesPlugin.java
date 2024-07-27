@@ -30,6 +30,8 @@ public final class BodiesPlugin extends JavaPlugin {
         getCommand("bodies").setTabCompleter(new BodiesCommand());
 
         BodySerializer.getAllBodies().forEach(b -> Bukkit.getOnlinePlayers().forEach(b.body::spawn));
+
+        saveDefaultConfig();
     }
 
     @Override
