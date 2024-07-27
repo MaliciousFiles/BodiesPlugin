@@ -48,6 +48,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         else if (args.length == 0) error(sender, "Invalid subcommand ' '");
         else if (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust")) trust(player, args);
         else if (args[0].equalsIgnoreCase("priority")) priority(player, args);
+        else if (!player.isOp()) error(sender, "You do not have permission to use this command");
         else if (args[0].equalsIgnoreCase("list")) list(player, args);
         else if (args[0].equalsIgnoreCase("info")) info(player, args);
         else if (args[0].equalsIgnoreCase("claim")) claim(player, args);
@@ -231,10 +232,10 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
                 }
                 case "untrust" -> options = SettingsSerializer.getSettings(player.getUniqueId()).trusted().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList();
                 case "priority" -> options = List.of("body", "player");
-                case "list", "claim", "info" -> options = BodySerializer.getPlayersWithBodies().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList();
+                case "list", "claim", "info" -> { if (player.isOp()) options = BodySerializer.getPlayersWithBodies().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList(); }
             }
         } else if (args.length == 3) {
-            if (args[0].equalsIgnoreCase("claim") || args[0].equalsIgnoreCase("info")) {
+            if (player.isOp() && (args[0].equalsIgnoreCase("claim") || args[0].equalsIgnoreCase("info"))) {
                 OfflinePlayer op = Bukkit.getOfflinePlayerIfCached(args[1]);
                 if (op == null) return options;
 
