@@ -23,8 +23,6 @@ import java.time.Instant;
 import java.util.*;
 
 public class BodiesCommand implements CommandExecutor, TabCompleter {
-    private static final DateFormat DF = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
-
     private void error(CommandSender sender, String message) {
         sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
     }
@@ -34,8 +32,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
 
         String[] sections = message.split("%s");
         for (int i = 0; i < args.length+1; i++) {
-            String section = sections[i];
-            if (section.isEmpty()) continue;
+            String section = i >= sections.length ? "" : sections[i];
 
             component = component.append(Component.text(section).color(NamedTextColor.GOLD));
 
@@ -122,7 +119,11 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
 
         for (int i = 0; i < bodies.size(); i++) {
             BodySerializer.BodyInfo body = bodies.get(i);
-            sender.sendMessage(Component.text("  (%s) %s".formatted(i, DF.format(Date.from(Instant.ofEpochMilli(body.timestamp))))));
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(body.timestamp);
+
+            success(sender, "  (%s) %s:%s %s-%s-%s", i, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.YEAR));
         }
     }
 
@@ -159,7 +160,11 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
 
         BodySerializer.BodyInfo body = bodies.get(index);
         success(sender, "Body %s for %s:", index, op.getName());
-        success(sender, "  Time: %s", DF.format(Date.from(Instant.ofEpochMilli(body.timestamp))));
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(body.timestamp);
+        success(sender, "  Time: %s:%s:%s %s-%s-%s", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.YEAR));
+
         success(sender, "  Message: %s", body.message);
         success(sender, "  Experience: %s", body.exp);
         success(sender, "  Location: (%s,%s,%s,%s)", body.loc.getBlockX(), body.loc.getBlockY(), body.loc.getBlockZ(), body.loc.getWorld().getName());
@@ -170,7 +175,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
 
             str.append("%s, ");
         }
-        success(sender, str.substring(0, str.length()-2) + "]", Arrays.stream(body.items).filter(Objects::nonNull).map(ItemStack::getType).toList());
+        success(sender, str.substring(0, str.length()-2) + "]", Arrays.stream(body.items).filter(Objects::nonNull).map(ItemStack::getType).toArray());
     }
 
     private void claim(Player sender, String[] args) {
