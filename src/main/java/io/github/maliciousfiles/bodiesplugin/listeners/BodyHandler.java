@@ -81,10 +81,13 @@ public class BodyHandler implements Listener {
 
     private static final List<String> MATERIAL_ORDER = List.of("WOODEN", "STONE", "IRON", "DIAMOND", "NETHERITE");
     public static void spawnZombie(BodySerializer.BodyInfo body) {
-//        destroyBody(body);
+        destroyBody(body);
 
         Zombie zombie = body.loc.getWorld().spawn(body.loc, Zombie.class);
+        zombie.setAdult();
         for (EquipmentSlot slot : EquipmentSlot.values()) zombie.getEquipment().setDropChance(slot, 0);
+
+        BodySerializer.addZombie(zombie.getUniqueId(), body);
 
         zombie.getEquipment().setArmorContents(Arrays.copyOfRange(body.items, 36, 40));
 
@@ -118,7 +121,7 @@ public class BodyHandler implements Listener {
                 return;
             }
 
-            if (Math.random() < BodiesPlugin.instance.getConfig().getDouble("zombieChance")) spawnZombie(body);
+            if (!body.noZombie && Math.random() < BodiesPlugin.instance.getConfig().getDouble("zombieChance")) spawnZombie(body);
             else claimBody(evt.getPlayer(), body);
         }
     }

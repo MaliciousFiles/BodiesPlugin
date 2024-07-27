@@ -9,7 +9,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Interaction;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
@@ -17,10 +16,31 @@ import java.io.IOException;
 import java.util.*;
 
 public class BodySerializer {
-    private static File configFile;
+    private static File bodiesFile;
+    private static File zombiesFile;
 
     private static final Map<UUID, List<BodyInfo>> playerMap = new HashMap<>();
     private static final Map<UUID, BodyInfo> interactionMap = new HashMap<>();
+
+    private static final Map<UUID, BodyInfo> zombieMap = new HashMap<>();
+
+    public static void addZombie(UUID zombie, BodyInfo body) {
+        addZombie(zombie, body, true);
+    }
+
+    private static void addZombie(UUID zombie, BodyInfo body, boolean serialize) {
+        zombieMap.put(zombie, body);
+        if (serialize) serialize();
+    }
+
+    public static BodyInfo getZombieInfo(UUID zombie) {
+        return zombieMap.get(zombie);
+    }
+
+    public static void removeZombie(UUID zombie) {
+        zombieMap.remove(zombie);
+        serialize();
+    }
 
     public static List<BodyInfo> getAllBodies() {
         return playerMap.values().stream().reduce(new ArrayList<>(), (a, b) -> { a.addAll(b); return a; });
@@ -39,12 +59,16 @@ public class BodySerializer {
     }
 
     public static void addBody(BodyInfo info) {
+        addBody(info, true);
+    }
+
+    private static void addBody(BodyInfo info, boolean serialize) {
         for (UUID interaction : info.interactions) interactionMap.put(interaction, info);
 
         playerMap.putIfAbsent(info.player, new ArrayList<>());
         playerMap.get(info.player).add(info);
 
-        serialize();
+        if (serialize) serialize();
     }
 
     public static void removeBody(BodyInfo body) {
@@ -58,29 +82,45 @@ public class BodySerializer {
     }
 
     private static void serialize() {
-        FileConfiguration config = new YamlConfiguration();
+        FileConfiguration bodyConfig = new YamlConfiguration();
+        playerMap.forEach((uuid, list) -> bodyConfig.set(uuid.toString(), list));
 
-        playerMap.forEach((uuid, list) -> config.set(uuid.toString(), list));
+        FileConfiguration zombieConfig = new YamlConfiguration();
+        zombieMap.forEach((uuid, body) -> zombieConfig.set(uuid.toString(), body));
 
         try {
-            config.save(configFile);
+            bodyConfig.save(bodiesFile);
+            zombieConfig.save(zombiesFile);
         } catch (IOException e) { throw new RuntimeException(e); }
     }
 
     public static void deserialize() {
-        if (configFile == null) configFile = new File(BodiesPlugin.instance.getDataFolder(), "bodies.yml");
-        if (!configFile.exists()) return;
+        if (bodiesFile == null) bodiesFile = new File(BodiesPlugin.instance.getDataFolder(), "bodies.yml");
+        if (bodiesFile.exists()) {
+            FileConfiguration config = new YamlConfiguration();
+            try {
+                config.load(bodiesFile);
+                for (String key : config.getKeys(false)) {
+                    for (Object obj : Objects.requireNonNull(config.getList(key))) {
+                        if (!(obj instanceof BodyInfo bi)) continue;
 
-        FileConfiguration config = new YamlConfiguration();
-        try {
-            config.load(configFile);
-        } catch (IOException | InvalidConfigurationException e) { return; }
-        for (String key : config.getKeys(false)) {
-            for (Object obj : Objects.requireNonNull(config.getList(key))) {
-                if (!(obj instanceof BodyInfo bi)) return;
+                        addBody(bi, false);
+                    }
+                }
+            } catch (IOException | InvalidConfigurationException ignored) { }
+        }
 
-                addBody(bi);
-            }
+        if (zombiesFile == null) zombiesFile = new File(BodiesPlugin.instance.getDataFolder(), "zombies.yml");
+        if (zombiesFile.exists()) {
+            FileConfiguration config = new YamlConfiguration();
+            try {
+                config.load(zombiesFile);
+                for (String key : config.getKeys(false)) {
+                    if (!(config.get(key) instanceof BodyInfo bi)) continue;
+
+                    addZombie(UUID.fromString(key), bi, false);
+                }
+            } catch (IOException | InvalidConfigurationException ignored) { }
         }
     }
 
@@ -94,13 +134,14 @@ public class BodySerializer {
         public final UUID textDisplay;
         public final long timestamp;
         public final Body body;
+        public final boolean noZombie;
 
 
-        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp) {
-            this(player, message, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player));
+        private BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, boolean noZombie) {
+            this(player, message, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player), noZombie);
         }
 
-        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body) {
+        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body, boolean noZombie) {
             this.player = player;
             this.message = message;
             this.loc = loc;
@@ -110,6 +151,7 @@ public class BodySerializer {
             this.textDisplay = textDisplay;
             this.timestamp = timestamp;
             this.body = body;
+            this.noZombie = noZombie;
         }
 
         @Override
@@ -122,7 +164,8 @@ public class BodySerializer {
                     "exp", exp,
                     "interactions", Arrays.stream(interactions).map(UUID::toString).toArray(),
                     "textDisplay", textDisplay.toString(),
-                    "timestamp", timestamp);
+                    "timestamp", timestamp,
+                    "noZombie", noZombie);
         }
 
         public static BodyInfo deserialize(Map<String, Object> map) {
@@ -134,7 +177,8 @@ public class BodySerializer {
                     (int) map.get("exp"),
                     ((List<String>) map.get("interactions")).stream().map(UUID::fromString).toArray(UUID[]::new),
                     UUID.fromString((String) map.get("textDisplay")),
-                    (long) map.get("timestamp"));
+                    (long) map.get("timestamp"),
+                    (boolean) map.get("noZombie"));
         }
     }
 }
