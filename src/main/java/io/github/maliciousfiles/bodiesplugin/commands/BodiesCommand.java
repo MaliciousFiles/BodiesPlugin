@@ -24,7 +24,7 @@ import java.util.*;
 
 public class BodiesCommand implements CommandExecutor, TabCompleter {
     private void error(CommandSender sender, String message) {
-        sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
+        sender.sendMessage(Component.text(message+" (`/bodies help` for help)").color(NamedTextColor.RED));
     }
 
     private void success(CommandSender sender, String message, Object... args) {
@@ -46,15 +46,33 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String name, @NotNull String[] args) {
         if (!(sender instanceof Player player)) error(sender, "Only players can use this command");
         else if (args.length == 0) error(sender, "Invalid subcommand ' '");
+        else if (args[0].equalsIgnoreCase("help")) help(player);
         else if (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust")) trust(player, args);
         else if (args[0].equalsIgnoreCase("priority")) priority(player, args);
-        else if (!player.isOp()) error(sender, "You do not have permission to use this command");
         else if (args[0].equalsIgnoreCase("list")) list(player, args);
+        else if (!player.isOp()) error(sender, "You do not have permission to use this command");
         else if (args[0].equalsIgnoreCase("info")) info(player, args);
         else if (args[0].equalsIgnoreCase("claim")) claim(player, args);
         else error(sender, "Invalid subcommand '%s'".formatted(args[0]));
 
         return true;
+    }
+
+    private void help(Player sender) {
+        success(sender, "Bodies Help:");
+        success(sender, "  /%s %s - Show this help message", "bodies", "help");
+        success(sender, "  /%s %s <%s> - Trust a player to access your body", "bodies", "trust", "player");
+        success(sender, "  /%s %s <%s> - Untrust a player from accessing your body", "bodies", "untrust", "player");
+        success(sender, "  /%s %s <%s/%s> - Set whether to prioritize your body or player inventory", "bodies", "priority", "body", "player");
+
+        if (sender.isOp()) {
+            success(sender, "  /bodies %s [%s] - List all bodies for a player", "bodies", "list", "player");
+            success(sender, "  /bodies %s <%s> <%s> - Get information about a player's body", "bodies", "info", "player", "id");
+            success(sender, "  /bodies %s <%s> <%s> [%s] - Remotely claim a player's body", "bodies", "claim", "player", "id", "recipient");
+        } else {
+            success(sender, "  /bodies %s - List all your bodies", "bodies", "list");
+            success(sender, "  /bodies %s <%s> - Get information about a body", "bodies", "info", "id");
+        }
     }
 
     private void trust(Player sender, String[] args) {
@@ -104,20 +122,19 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
     }
 
     private void list(Player sender, String[] args) {
-        if (args.length < 2) {
-            error(sender, "Invalid player ' '");
+        if (args.length > 1 && !sender.isOp()) {
+            error(sender, "You do not have permission to view other players' bodies");
             return;
         }
 
-        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
-        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
-        if (bodies == null) {
+        OfflinePlayer op = args.length < 2 ? sender : Bukkit.getOfflinePlayerIfCached(args[1]);
+        if (op == null) {
             error(sender, "Invalid player '%s'".formatted(args[1]));
             return;
         }
+        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
 
-        success(sender, "Bodies for %s:", op.getName());
-
+        success(sender, "Bodies for %s: (%s <%s> for more info)", op.getName(), "/bodies info", "id");
         for (int i = 0; i < bodies.size(); i++) {
             BodySerializer.BodyInfo body = bodies.get(i);
 
@@ -130,32 +147,33 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
 
     private void info(Player sender, String[] args) {
         if (args.length < 2) {
-            error(sender, "Invalid player ' '");
+            error(sender, sender.isOp() ? "Invalid player ' '" : "Invalid body ' '");
             return;
         }
 
-        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
-        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
-        if (bodies == null) {
+        OfflinePlayer op = sender.isOp() ? Bukkit.getOfflinePlayerIfCached(args[1]) : sender;
+        if (op == null) {
             error(sender, "Invalid player '%s'".formatted(args[1]));
             return;
         }
 
-        if (args.length < 3) {
+        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
+        if (sender.isOp() && args.length < 3) {
             error(sender, "Invalid body ' '");
             return;
         }
 
+        int indexIdx = sender.isOp() ? 2 : 1;
         int index;
         try {
-            index = Integer.parseInt(args[2]);
+            index = Integer.parseInt(args[indexIdx]);
         } catch (NumberFormatException e) {
-            error(sender, "Invalid body '%s'".formatted(args[2]));
+            error(sender, "Invalid body '%s'".formatted(args[indexIdx]));
             return;
         }
 
-        if (index >= bodies.size() || index < 0) {
-            error(sender, "Invalid body '%s'".formatted(args[2]));
+        if (bodies == null || index >= bodies.size() || index < 0) {
+            error(sender, "Invalid body '%s'".formatted(args[indexIdx]));
             return;
         }
 
@@ -185,13 +203,13 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
-        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
-        if (bodies == null) {
+        OfflinePlayer op = Bukkit.getOfflinePlayerIfCached(args[1]);
+        if (op == null) {
             error(sender, "Invalid player '%s'".formatted(args[1]));
             return;
         }
 
+        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
         if (args.length < 3) {
             error(sender, "Invalid body ' '");
             return;
@@ -205,15 +223,21 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        if (index >= bodies.size() || index < 0) {
+        if (bodies == null || index >= bodies.size() || index < 0) {
             error(sender, "Invalid body '%s'".formatted(args[2]));
+            return;
+        }
+
+        Player recipient = args.length < 4 ? sender : Bukkit.getPlayer(args[3]);
+        if (recipient == null) {
+            error(sender, "Invalid recipient '%s'".formatted(args[3]));
             return;
         }
 
         success(sender, "Claimed body %s for %s", index, op.getName());
 
         BodySerializer.BodyInfo body = bodies.get(index);
-        BodyHandler.claimBody(sender, body);
+        BodyHandler.claimBody(recipient, body);
     }
 
     @Override
@@ -222,8 +246,8 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         if (!(sender instanceof Player player)) return options;
 
         if (args.length == 1) {
-            options = new ArrayList<>(List.of("trust", "untrust", "priority"));
-            if (player.isOp()) options.addAll(List.of("list", "claim"));
+            options = new ArrayList<>(List.of("trust", "untrust", "priority", "list", "help"));
+            if (player.isOp()) options.addAll(List.of("claim", "info"));
         } else if (args.length == 2) {
             switch (args[0]) {
                 case "trust" -> {
@@ -232,7 +256,11 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
                 }
                 case "untrust" -> options = SettingsSerializer.getSettings(player.getUniqueId()).trusted().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList();
                 case "priority" -> options = List.of("body", "player");
-                case "list", "claim", "info" -> { if (player.isOp()) options = BodySerializer.getPlayersWithBodies().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList(); }
+                case "list" -> {
+                    if (player.isOp()) options = BodySerializer.getPlayersWithBodies().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList();
+                    else for (int i = 0; i < BodySerializer.getBodiesForPlayer(player).size(); i++) options.add(String.valueOf(i));
+                }
+                case "claim", "info" -> { if (player.isOp()) options = BodySerializer.getPlayersWithBodies().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).toList(); }
             }
         } else if (args.length == 3) {
             if (player.isOp() && (args[0].equalsIgnoreCase("claim") || args[0].equalsIgnoreCase("info"))) {
@@ -240,6 +268,10 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
                 if (op == null) return options;
 
                 for (int i = 0; i < BodySerializer.getBodiesForPlayer(op).size(); i++) options.add(String.valueOf(i));
+            }
+        } else if (args.length == 4) {
+            if (player.isOp() && args[0].equalsIgnoreCase("claim")) {
+                options = Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
             }
         }
 
