@@ -3,14 +3,13 @@ package io.github.maliciousfiles.bodiesplugin.listeners;
 import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.serializing.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.serializing.SettingsSerializer;
-import io.github.maliciousfiles.bodiesplugin.util.Body;
+import io.github.maliciousfiles.bodiesplugin.util.CustomZombie;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Particle;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.entity.CraftZombie;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.Player;
@@ -18,9 +17,11 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 
@@ -74,7 +75,7 @@ public class BodyHandler implements Listener {
 
         player.getInventory().setContents(finalContents);
         for (ItemStack it : player.getInventory().addItem(toAdd.toArray(ItemStack[]::new)).values()) {
-            player.getWorld().dropItem(player.getLocation(), it);
+            player.getWorld().dropItem(player.getLocation(), it, e -> e.setVelocity(new Vector()));
         }
 
         player.giveExp(body.exp);
@@ -84,13 +85,14 @@ public class BodyHandler implements Listener {
     public static void spawnZombie(BodySerializer.BodyInfo body) {
         destroyBody(body);
 
-        Zombie zombie = body.loc.getWorld().createEntity(body.loc, Zombie.class);
+        Zombie zombie = (Zombie) new CustomZombie(((CraftWorld) body.loc.getWorld()).getHandle()).getBukkitEntity();
 
         body.body.setReplacing(zombie);
         BodySerializer.addZombie(zombie.getUniqueId(), body);
 
         zombie.spawnAt(body.loc);
 
+        zombie.setCanPickupItems(false);
         zombie.setShouldBurnInDay(false);
         zombie.setCustomName(Bukkit.getOfflinePlayer(body.player).getName());
         zombie.setCustomNameVisible(true);
@@ -130,35 +132,49 @@ public class BodyHandler implements Listener {
                 return;
             }
 
-            if (!body.noZombie && Math.random() < BodiesPlugin.instance.getConfig().getDouble("zombieChance") && Arrays.stream(body.items).anyMatch(Objects::nonNull)) spawnZombie(body);
+            if (body.isZombie && evt.getPlayer().getGameMode() != GameMode.CREATIVE) spawnZombie(body);
             else claimBody(evt.getPlayer(), body);
         }
     }
 
     @EventHandler
     public void onMove(PlayerMoveEvent evt) {
-        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(evt.getPlayer());
-        if (bodies == null) return;
+        if (!evt.hasChangedPosition()) return;
+
+        checkRadius(evt.getPlayer());
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent evt) {
+        checkRadius(evt.getPlayer());
+
+        helpNewPlayer(evt.getPlayer());
+    }
+
+    public static void helpNewPlayer(Player player) {
+        if (!SettingsSerializer.hasSettings(player.getUniqueId())) {
+            SettingsSerializer.getSettings(player.getUniqueId());
+            player.performCommand("/bodies help");
+        }
+
+    }
+
+    private static void checkRadius(Player player) {
+        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(player);
 
         double radius = BodiesPlugin.instance.getConfig().getDouble("glowRadius");
         for (BodySerializer.BodyInfo body : bodies) {
-            if (body.loc.distanceSquared(evt.getPlayer().getLocation()) <= radius*radius) {
-                body.body.glow(evt.getPlayer());
-            } else {
-                body.body.deglow(evt.getPlayer());
-            }
+            body.body.setWithinRadius(player, body.loc.distanceSquared(player.getLocation()) <= radius*radius);
         }
 
         for (UUID zombie : BodySerializer.getAllZombies()) {
             BodySerializer.BodyInfo body = BodySerializer.getZombieInfo(zombie);
-            if (body.player != evt.getPlayer().getUniqueId()) continue;
+            if (!body.player.equals(player.getUniqueId())) continue;
 
-            Entity entity = Bukkit.getEntity(zombie);
-            if (entity.getLocation().distanceSquared(evt.getPlayer().getLocation()) <= radius*radius) {
-                body.body.glowZombie(evt.getPlayer());
-            } else {
-                body.body.deglowZombie(evt.getPlayer());
-            }
+            Zombie entity = (Zombie) Bukkit.getEntity(zombie);
+            body.body.setWithinRadius(player, entity.getLocation().distanceSquared(player.getLocation()) <= radius*radius);
+
+            if (!body.body.anyWithinRadius()) BodyGenerator.revertToBody(entity, true);
         }
     }
 }

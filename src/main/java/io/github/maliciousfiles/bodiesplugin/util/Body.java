@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
-import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -133,16 +132,36 @@ public class Body {
 
     }
 
-    public ClientboundBundlePacket getReplacePacket() {
-        return new ClientboundBundlePacket(replacePackets);
+    public ClientboundBundlePacket getReplacePacket(Player player) {
+        List<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
+        packets.addAll(replacePackets);
+        if (withinRadius.getOrDefault(player.getUniqueId(), false)) packets.addAll(zombieGlow);
+
+        return new ClientboundBundlePacket(packets);
     }
 
     public void replace(Player player) {
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(replacePackets));
+        ((CraftPlayer) player).getHandle().connection.send(getReplacePacket(player));
+    }
+
+    private final Map<UUID, Boolean> withinRadius = new HashMap<>();
+
+    public void setWithinRadius(Player player, boolean within) {
+        if (within != withinRadius.getOrDefault(player.getUniqueId(), false)) {
+            if (within) glow(player);
+            else deglow(player);
+
+            withinRadius.put(player.getUniqueId(), within);
+        }
+    }
+
+    public boolean anyWithinRadius() {
+        return withinRadius.values().stream().anyMatch(b->b);
     }
 
     public void spawn(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(spawnPackets));
+        if (withinRadius.getOrDefault(player.getUniqueId(), false)) glow(player);
     }
 
     public void destroy(Player player) {
@@ -150,19 +169,13 @@ public class Body {
     }
 
     public void glow(Player player) {
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(glowPackets));
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(
+                zombieGlow.isEmpty() ? glowPackets : zombieGlow));
     }
 
     public void deglow(Player player) {
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(deglowPackets));
-    }
-
-    public void glowZombie(Player player) {
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(zombieGlow));
-    }
-
-    public void deglowZombie(Player player) {
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(zombieDeglow));
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(
+                zombieDeglow.isEmpty() ? deglowPackets : zombieDeglow));
     }
 
     // adjusted from https://github.com/ShaneBeee/NMS-API/blob/master/src/main/java/com/shanebeestudios/nms/api/util/McUtils.java#L361

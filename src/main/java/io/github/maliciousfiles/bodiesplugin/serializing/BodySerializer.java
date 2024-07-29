@@ -52,7 +52,7 @@ public class BodySerializer {
     }
 
     public static List<BodyInfo> getBodiesForPlayer(OfflinePlayer player) {
-        return playerMap.get(player.getUniqueId());
+        return playerMap.getOrDefault(player.getUniqueId(), new ArrayList<>());
     }
 
     public static List<UUID> getPlayersWithBodies() {
@@ -141,14 +141,14 @@ public class BodySerializer {
         public final UUID textDisplay;
         public final long timestamp;
         public final Body body;
-        public final boolean noZombie;
+        public final boolean isZombie;
 
 
-        private BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, boolean noZombie) {
-            this(player, message, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player), noZombie);
+        private BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, boolean isZombie) {
+            this(player, message, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player), isZombie);
         }
 
-        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body, boolean noZombie) {
+        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body, boolean isZombie) {
             this.player = player;
             this.message = message;
             this.loc = loc;
@@ -158,7 +158,7 @@ public class BodySerializer {
             this.textDisplay = textDisplay;
             this.timestamp = timestamp;
             this.body = body;
-            this.noZombie = noZombie;
+            this.isZombie = isZombie;
         }
 
         @Override
@@ -172,7 +172,7 @@ public class BodySerializer {
                     "interactions", Arrays.stream(interactions).map(UUID::toString).toArray(),
                     "textDisplay", textDisplay.toString(),
                     "timestamp", timestamp,
-                    "noZombie", noZombie);
+                    "isZombie", isZombie);
         }
 
         public static BodyInfo deserialize(Map<String, Object> map) {
@@ -185,7 +185,7 @@ public class BodySerializer {
                     ((List<String>) map.get("interactions")).stream().map(UUID::fromString).toArray(UUID[]::new),
                     UUID.fromString((String) map.get("textDisplay")),
                     (long) map.get("timestamp"),
-                    (boolean) map.get("noZombie"));
+                    (boolean) map.get("isZombie"));
         }
     }
 }

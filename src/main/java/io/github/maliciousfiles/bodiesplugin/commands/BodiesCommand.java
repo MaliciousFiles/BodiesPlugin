@@ -5,7 +5,6 @@ import io.github.maliciousfiles.bodiesplugin.serializing.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.serializing.SettingsSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minecraft.world.entity.ExperienceOrb;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -17,9 +16,6 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.*;
 
 public class BodiesCommand implements CommandExecutor, TabCompleter {
@@ -135,7 +131,6 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
 
         success(sender, "Bodies for %s: (%s <%s> for more info)", op.getName(), "/bodies info", "id");
-        if (bodies == null) return;
         for (int i = 0; i < bodies.size(); i++) {
             BodySerializer.BodyInfo body = bodies.get(i);
 
@@ -173,7 +168,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        if (bodies == null || index >= bodies.size() || index < 0) {
+        if (index >= bodies.size() || index < 0) {
             error(sender, "Invalid body '%s'".formatted(args[indexIdx]));
             return;
         }
@@ -224,7 +219,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        if (bodies == null || index >= bodies.size() || index < 0) {
+        if (index >= bodies.size() || index < 0) {
             error(sender, "Invalid body '%s'".formatted(args[2]));
             return;
         }
@@ -266,7 +261,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 3) {
             if (player.isOp() && (args[0].equalsIgnoreCase("claim") || args[0].equalsIgnoreCase("info"))) {
                 OfflinePlayer op = Bukkit.getOfflinePlayerIfCached(args[1]);
-                if (op == null || BodySerializer.getBodiesForPlayer(op) == null) return options;
+                if (op == null) return options;
 
                 for (int i = 0; i < BodySerializer.getBodiesForPlayer(op).size(); i++) options.add(String.valueOf(i));
             }

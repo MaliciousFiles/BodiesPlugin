@@ -18,6 +18,10 @@ public class SettingsSerializer {
 
     private static final Map<UUID, PlayerSettings> playerSettings = new HashMap<>();
 
+    public static boolean hasSettings(UUID player) {
+        return playerSettings.containsKey(player);
+    }
+
     public static PlayerSettings getSettings(UUID player) {
         playerSettings.putIfAbsent(player, new PlayerSettings());
         return playerSettings.get(player);
