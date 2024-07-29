@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -13,15 +14,18 @@ import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.level.GameType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -42,7 +46,7 @@ public class Body {
     private List<Packet<? super ClientGamePacketListener>> zombieDeglow = new ArrayList<>();
     private UUID skin;
 
-    public Body(Location loc, UUID dead) {
+    public Body(Location loc, UUID dead, ItemStack[] items, int selectedItem) {
         this.skin = dead;
 
         ServerLevel level = ((CraftWorld) loc.getWorld()).getHandle();
@@ -72,6 +76,15 @@ public class Body {
                 fakePlayer.getType(), 0,
                 fakePlayer.getDeltaMovement(), fakePlayer.getYHeadRot()
         ));
+
+        spawnPackets.add(new ClientboundSetEquipmentPacket(fakePlayer.getId(), List.of(
+                Pair.of(EquipmentSlot.HEAD, CraftItemStack.asNMSCopy(items[39])),
+                Pair.of(EquipmentSlot.CHEST, CraftItemStack.asNMSCopy(items[38])),
+                Pair.of(EquipmentSlot.LEGS, CraftItemStack.asNMSCopy(items[37])),
+                Pair.of(EquipmentSlot.FEET, CraftItemStack.asNMSCopy(items[36])),
+                Pair.of(EquipmentSlot.MAINHAND, CraftItemStack.asNMSCopy(items[selectedItem])),
+                Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(items[40]))
+        )));
 
         SynchedEntityData data = fakePlayer.getEntityData();
         data.set(ServerPlayer.DATA_PLAYER_MODE_CUSTOMISATION, Byte.MAX_VALUE);
@@ -148,15 +161,17 @@ public class Body {
 
     public void setWithinRadius(Player player, boolean within) {
         if (within != withinRadius.getOrDefault(player.getUniqueId(), false)) {
+            withinRadius.put(player.getUniqueId(), within);
+
+            if (!player.getUniqueId().equals(skin)) return;
+
             if (within) glow(player);
             else deglow(player);
-
-            withinRadius.put(player.getUniqueId(), within);
         }
     }
 
     public boolean anyWithinRadius() {
-        return withinRadius.values().stream().anyMatch(b->b);
+        return withinRadius.entrySet().stream().anyMatch(e->e.getValue() && Bukkit.getPlayer(e.getKey()) != null);
     }
 
     public void spawn(Player player) {

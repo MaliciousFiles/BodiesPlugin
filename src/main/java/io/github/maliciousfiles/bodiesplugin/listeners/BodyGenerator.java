@@ -25,6 +25,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -77,12 +78,12 @@ public class BodyGenerator implements Listener {
                     difficulty != Difficulty.PEACEFUL &&
                     Math.random() < BodiesPlugin.instance.getConfig().getDouble(difficulty.name().toLowerCase() + "ZombieChance");
 
-            BodySerializer.addBody(spawnBody(evt.getEntity().getUniqueId(), evt.getDeathMessage(), evt.getEntity().getLocation(), contents, exp, isZombie));
+            BodySerializer.addBody(spawnBody(evt.getEntity().getUniqueId(), evt.getDeathMessage(), evt.getEntity().getLocation(), evt.getPlayer().getInventory().getHeldItemSlot(), contents, exp, isZombie));
         });
     }
 
-    private static BodySerializer.BodyInfo spawnBody(UUID player, String message, Location location, ItemStack[] items, int exp, boolean isZombie) {
-        Body body = new Body(location.clone(), player);
+    private static BodySerializer.BodyInfo spawnBody(UUID player, String message, Location location, int selectedItem, ItemStack[] items, int exp, boolean isZombie) {
+        Body body = new Body(location.clone(), player, items, selectedItem);
         Bukkit.getOnlinePlayers().forEach(body::spawn);
 
         UUID[] interactions = new UUID[4];
@@ -104,7 +105,7 @@ public class BodyGenerator implements Listener {
         textDisplay.setAlignment(TextDisplay.TextAlignment.CENTER);
         textDisplay.text(Component.text(message));
 
-        return new BodySerializer.BodyInfo(player, message, location.clone(), items, exp, interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body, isZombie);
+        return new BodySerializer.BodyInfo(player, message, location.clone(), selectedItem, items, exp, interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body, isZombie);
     }
 
     @EventHandler
@@ -120,6 +121,6 @@ public class BodyGenerator implements Listener {
         if (body == null) return;
 
         BodySerializer.removeZombie(zombie.getUniqueId());
-        BodySerializer.addBody(spawnBody(body.player, body.message, zombie.getLocation(), body.items, body.exp, isZombie));
+        BodySerializer.addBody(spawnBody(body.player, body.message, zombie.getLocation(), body.selectedItem, body.items, body.exp, isZombie));
     }
 }

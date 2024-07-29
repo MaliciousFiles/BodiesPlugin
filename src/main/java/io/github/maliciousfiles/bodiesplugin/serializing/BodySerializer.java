@@ -135,6 +135,7 @@ public class BodySerializer {
         public final UUID player;
         public final String message;
         public final Location loc;
+        public final int selectedItem;
         public final ItemStack[] items;
         public final int exp;
         public final UUID[] interactions;
@@ -144,14 +145,15 @@ public class BodySerializer {
         public final boolean isZombie;
 
 
-        private BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, boolean isZombie) {
-            this(player, message, loc, items, exp, interactions, textDisplay, timestamp, new Body(loc, player), isZombie);
+        private BodyInfo(UUID player, String message, Location loc, int selectedItem, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, boolean isZombie) {
+            this(player, message, loc, selectedItem, items, exp, interactions, textDisplay, timestamp, new Body(loc, player, items, selectedItem), isZombie);
         }
 
-        public BodyInfo(UUID player, String message, Location loc, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body, boolean isZombie) {
+        public BodyInfo(UUID player, String message, Location loc, int selectedItem, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, Body body, boolean isZombie) {
             this.player = player;
             this.message = message;
             this.loc = loc;
+            this.selectedItem = selectedItem;
             this.items = items;
             this.exp = exp;
             this.interactions = interactions;
@@ -167,6 +169,7 @@ public class BodySerializer {
                     "player", player.toString(),
                     "message", message,
                     "loc", loc,
+                    "selectedItem", selectedItem,
                     "items", items,
                     "exp", exp,
                     "interactions", Arrays.stream(interactions).map(UUID::toString).toArray(),
@@ -180,6 +183,7 @@ public class BodySerializer {
                     UUID.fromString((String) map.get("player")),
                     (String) map.get("message"),
                     (Location) map.get("loc"),
+                    (int) map.get("selectedItem"),
                     ((List<ItemStack>) map.get("items")).toArray(ItemStack[]::new),
                     (int) map.get("exp"),
                     ((List<String>) map.get("interactions")).stream().map(UUID::fromString).toArray(UUID[]::new),

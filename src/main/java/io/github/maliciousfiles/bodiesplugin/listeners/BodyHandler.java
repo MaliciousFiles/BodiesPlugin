@@ -19,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -88,9 +89,6 @@ public class BodyHandler implements Listener {
         Zombie zombie = (Zombie) new CustomZombie(((CraftWorld) body.loc.getWorld()).getHandle()).getBukkitEntity();
 
         body.body.setReplacing(zombie);
-        BodySerializer.addZombie(zombie.getUniqueId(), body);
-
-        zombie.spawnAt(body.loc);
 
         zombie.setCanPickupItems(false);
         zombie.setShouldBurnInDay(false);
@@ -102,22 +100,36 @@ public class BodyHandler implements Listener {
 
         zombie.getEquipment().setArmorContents(Arrays.copyOfRange(body.items, 36, 40));
 
-        ItemStack weapon = null;
-        for (ItemStack item : body.items) {
+        int weaponIdx = body.selectedItem;
+        ItemStack weapon = body.items[body.selectedItem];
+        for (int i = 0; i < body.items.length; i++) {
+            ItemStack item = body.items[i];
             if (item == null) continue;
 
             String[] name = item.getType().name().split("_");
             if (name.length < 2 || !name[1].equals("SWORD") && !name[1].equals("AXE")) continue;
 
-            int curIdx = weapon == null ? -1 : MATERIAL_ORDER.indexOf(weapon.getType().name().split("_")[0]);
-            int newIdx = MATERIAL_ORDER.indexOf(name[0]);
+            float curIdx = weapon == null ? -1 : MATERIAL_ORDER.indexOf(weapon.getType().name().split("_")[0]);
+            if (weapon != null && weapon.getType().name().split("_")[1].equals("AXE")) curIdx += 0.5f;
+
+            float newIdx = MATERIAL_ORDER.indexOf(name[0]);
+            if (name[1].equals("AXE")) newIdx += 0.5f;
+
             if (newIdx > curIdx || (newIdx == curIdx && item.getEnchantments().size() > weapon.getEnchantments().size())) {
                 weapon = item.clone();
+                weaponIdx = i;
             }
         }
 
         zombie.getEquipment().setItemInMainHand(weapon);
         zombie.getEquipment().setItemInOffHand(body.items[40]);
+
+        BodySerializer.addZombie(zombie.getUniqueId(), new BodySerializer.BodyInfo(
+                body.player, body.message, body.loc, weaponIdx,
+                body.items, body.exp, body.interactions, body.textDisplay,
+                body.timestamp, body.body, true
+        ));
+        zombie.spawnAt(body.loc);
     }
 
     @EventHandler
@@ -145,6 +157,11 @@ public class BodyHandler implements Listener {
     }
 
     @EventHandler
+    public void onTeleport(PlayerTeleportEvent evt) {
+        checkRadius(evt.getPlayer());
+    }
+
+    @EventHandler
     public void onJoin(PlayerJoinEvent evt) {
         checkRadius(evt.getPlayer());
 
@@ -154,23 +171,20 @@ public class BodyHandler implements Listener {
     public static void helpNewPlayer(Player player) {
         if (!SettingsSerializer.hasSettings(player.getUniqueId())) {
             SettingsSerializer.getSettings(player.getUniqueId());
-            player.performCommand("/bodies help");
+            player.performCommand("bodies help");
         }
 
     }
 
     private static void checkRadius(Player player) {
-        List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(player);
 
         double radius = BodiesPlugin.instance.getConfig().getDouble("glowRadius");
-        for (BodySerializer.BodyInfo body : bodies) {
+        for (BodySerializer.BodyInfo body : BodySerializer.getAllBodies()) {
             body.body.setWithinRadius(player, body.loc.distanceSquared(player.getLocation()) <= radius*radius);
         }
 
         for (UUID zombie : BodySerializer.getAllZombies()) {
             BodySerializer.BodyInfo body = BodySerializer.getZombieInfo(zombie);
-            if (!body.player.equals(player.getUniqueId())) continue;
-
             Zombie entity = (Zombie) Bukkit.getEntity(zombie);
             body.body.setWithinRadius(player, entity.getLocation().distanceSquared(player.getLocation()) <= radius*radius);
 

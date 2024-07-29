@@ -75,12 +75,12 @@ public class SettingsSerializer {
 
         @Override
         public Map<String, Object> serialize() {
-            return Map.of("trusted", trusted.stream().map(UUID::toString), "prioritizeInv", prioritizeInv);
+            return Map.of("trusted", trusted.stream().map(UUID::toString).toList(), "prioritizeInv", prioritizeInv);
         }
 
         public static PlayerSettings deserialize(Map<String, Object> map) {
             PlayerSettings settings = new PlayerSettings();
-            settings.trusted = ((List<String>) map.get("trusted")).stream().map(UUID::fromString).toList();
+            settings.trusted = new ArrayList<>(((List<String>) map.get("trusted")).stream().map(UUID::fromString).toList());
             settings.prioritizeInv = (boolean) map.get("prioritizeInv");
             return settings;
         }
