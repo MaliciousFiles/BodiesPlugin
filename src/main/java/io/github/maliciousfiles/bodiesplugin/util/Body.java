@@ -162,7 +162,7 @@ public class Body {
     private final Map<UUID, Boolean> withinRadius = new HashMap<>();
 
     private boolean shouldGlow(Player player) {
-        return withinRadius.getOrDefault(player.getUniqueId(), false) && (player.getUniqueId() == skin || SettingsSerializer.getSettings(skin).trusted().contains(player.getUniqueId()));
+        return withinRadius.getOrDefault(player.getUniqueId(), false) && (player.getUniqueId().equals(skin) || SettingsSerializer.getSettings(skin).trusted().contains(player.getUniqueId()));
     }
 
     public void setWithinRadius(Player player, boolean within) {
@@ -176,8 +176,8 @@ public class Body {
         }
     }
 
-    public boolean anyWithinRadius() {
-        return withinRadius.entrySet().stream().anyMatch(e->e.getValue() && Bukkit.getPlayer(e.getKey()) != null);
+    public boolean noneWithinRadius() {
+        return withinRadius.entrySet().stream().noneMatch(e -> e.getValue() && Bukkit.getPlayer(e.getKey()) != null);
     }
 
     public void spawn(Player player) {

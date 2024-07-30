@@ -6,9 +6,13 @@ import io.github.maliciousfiles.bodiesplugin.serializing.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.util.Body;
 import io.github.maliciousfiles.bodiesplugin.util.CustomPacketListener;
 import net.kyori.adventure.text.Component;
+import net.minecraft.network.Connection;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
+import net.minecraft.network.protocol.game.GameProtocols;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import org.bukkit.Bukkit;
@@ -25,10 +29,12 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class BodyGenerator implements Listener {
     private static final PlayerTeam TEAM = new PlayerTeam(null, "") {
@@ -52,9 +58,16 @@ public class BodyGenerator implements Listener {
     public static void replaceConnection(Player p) {
         ServerPlayer sp = ((CraftPlayer) p).getHandle();
 
-        sp.connection = new CustomPacketListener(sp.server, sp.connection.connection, sp,
+        ServerGamePacketListenerImpl listener = new CustomPacketListener(sp.server, sp.connection.connection, sp,
                 new CommonListenerCookie(sp.gameProfile, sp.connection.latency(), sp.clientInformation(), sp.connection.isTransferred()));
 
+        try {
+            Field field = Connection.class.getDeclaredField("packetListener");
+            field.setAccessible(true);
+            field.set(sp.connection.connection, listener);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @EventHandler
@@ -84,7 +97,10 @@ public class BodyGenerator implements Listener {
 
     private static BodySerializer.BodyInfo spawnBody(UUID player, String message, Location location, int selectedItem, ItemStack[] items, int exp, boolean isZombie) {
         Body body = new Body(location.clone(), player, items, selectedItem);
-        Bukkit.getOnlinePlayers().forEach(body::spawn);
+        Bukkit.getOnlinePlayers().forEach(p -> {
+            BodyHandler.checkRadius(p);
+            body.spawn(p);
+        });
 
         UUID[] interactions = new UUID[4];
         for (int i = 0; i < 4; i++) {
@@ -111,7 +127,10 @@ public class BodyGenerator implements Listener {
     @EventHandler
     public void onRemoval(EntityRemoveFromWorldEvent evt) {
         if (evt.getEntity() instanceof Zombie zombie) {
-            revertToBody(zombie, ((CraftZombie) zombie).getHandle().getRemovalReason() != net.minecraft.world.entity.Entity.RemovalReason.KILLED);
+            net.minecraft.world.entity.Entity.RemovalReason reason = ((CraftZombie) zombie).getHandle().getRemovalReason();
+            if (!reason.shouldDestroy()) return;
+
+            revertToBody(zombie, reason != net.minecraft.world.entity.Entity.RemovalReason.KILLED);
         }
     }
 

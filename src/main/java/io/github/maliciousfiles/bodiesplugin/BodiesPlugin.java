@@ -29,6 +29,7 @@ public final class BodiesPlugin extends JavaPlugin {
         getCommand("bodies").setTabCompleter(new BodiesCommand());
 
         Bukkit.getOnlinePlayers().forEach(p -> {
+            BodyHandler.checkRadius(p);
             BodySerializer.getAllBodies().forEach(b -> b.body.spawn(p));
             BodyGenerator.replaceConnection(p);
             BodyHandler.helpNewPlayer(p);

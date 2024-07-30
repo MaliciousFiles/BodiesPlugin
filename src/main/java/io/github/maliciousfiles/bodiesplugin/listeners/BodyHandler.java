@@ -29,8 +29,8 @@ public class BodyHandler implements Listener {
     private static void destroyBody(BodySerializer.BodyInfo body) {
         Bukkit.getOnlinePlayers().forEach(body.body::destroy);
 
-        for (UUID interaction : body.interactions) body.loc.getWorld().getEntity(interaction).remove();
-        body.loc.getWorld().getEntity(body.textDisplay).remove();
+        for (UUID interaction : body.interactions) Optional.ofNullable(body.loc.getWorld().getEntity(interaction)).ifPresent(Entity::remove);
+        Optional.ofNullable(body.loc.getWorld().getEntity(body.textDisplay)).ifPresent(Entity::remove);
 
         body.loc.getWorld().spawnParticle(Particle.POOF, body.loc, 3, 0, 0, 0, 0.25);
 
@@ -164,7 +164,7 @@ public class BodyHandler implements Listener {
             body.body.setWithinRadius(player, evt.getEntity().getLocation().distanceSquared(player.getLocation()) <= radius*radius);
         }
 
-        if (!body.body.anyWithinRadius() && evt.getEntity().isOnGround()) BodyGenerator.revertToBody((Zombie) evt.getEntity(), true);
+        if (body.body.noneWithinRadius() && evt.getEntity().isOnGround() && evt.getEntity().isValid()) evt.getEntity().remove();
     }
 
     @EventHandler
@@ -192,8 +192,7 @@ public class BodyHandler implements Listener {
 
     }
 
-    private static void checkRadius(Player player) {
-
+    public static void checkRadius(Player player) {
         double radius = BodiesPlugin.instance.getConfig().getDouble("glowRadius");
         for (BodySerializer.BodyInfo body : BodySerializer.getAllBodies()) {
             body.body.setWithinRadius(player, body.loc.distanceSquared(player.getLocation()) <= radius*radius);
@@ -204,7 +203,7 @@ public class BodyHandler implements Listener {
             Zombie entity = (Zombie) Bukkit.getEntity(zombie);
             body.body.setWithinRadius(player, entity.getLocation().distanceSquared(player.getLocation()) <= radius*radius);
 
-            if (!body.body.anyWithinRadius() && entity.isOnGround()) BodyGenerator.revertToBody(entity, true);
+            if (body.body.noneWithinRadius() && entity.isOnGround()) entity.remove();
         }
     }
 }
