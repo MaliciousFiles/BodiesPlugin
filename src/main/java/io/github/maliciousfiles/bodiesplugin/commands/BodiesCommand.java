@@ -102,6 +102,8 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             if (trusted.isOnline()) success(trusted.getPlayer(), "You are no longer trusted by {}", sender.getName());
             SettingsSerializer.untrustPlayer(sender, trusted);
         }
+
+        if (trusted.isOnline()) BodyHandler.checkRadius(trusted.getPlayer());
     }
 
     private void priority(Player sender, String[] args) {

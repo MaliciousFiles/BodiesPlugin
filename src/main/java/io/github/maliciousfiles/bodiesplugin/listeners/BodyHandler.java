@@ -64,7 +64,7 @@ public class BodyHandler implements Listener {
                     playerContents[j].setAmount(totalSize);
                     finalContents[j] = playerContents[j];
                 }
-            } else if (SettingsSerializer.getSettings(player.getUniqueId()).prioritizeInv()) {
+            } else if (SettingsSerializer.getSettings(player.getUniqueId()).prioritizeInv() || !player.getUniqueId().equals(body.player)) {
                 finalContents[j] = playerContents[j];
                 toAdd.add(bodyContents[j]);
             } else {

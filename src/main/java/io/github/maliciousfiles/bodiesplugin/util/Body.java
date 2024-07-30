@@ -149,44 +149,48 @@ public class Body {
     public ClientboundBundlePacket getReplacePacket(Player player) {
         List<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         packets.addAll(replacePackets);
-        if (shouldGlow(player)) packets.addAll(zombieGlow);
+        if (glowing.contains(player.getUniqueId())) packets.addAll(zombieGlow);
 
         return new ClientboundBundlePacket(packets);
     }
 
     public void replace(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(getReplacePacket(player));
-        if (shouldGlow(player)) glow(player);
+        if (glowing.contains(player.getUniqueId())) glow(player);
     }
 
-    private final Map<UUID, Boolean> withinRadius = new HashMap<>();
+    private final List<UUID> withinRadius = new ArrayList<>();
+    private final List<UUID> glowing = new ArrayList<>();
 
     private boolean glowable(Player player) {
         return player.getUniqueId().equals(skin) || SettingsSerializer.getSettings(skin).trusted().contains(player.getUniqueId());
     }
 
-    private boolean shouldGlow(Player player) {
-        return withinRadius.getOrDefault(player.getUniqueId(), false) && glowable(player);
-    }
-
     public void setWithinRadius(Player player, boolean within) {
-        if (within != withinRadius.getOrDefault(player.getUniqueId(), false)) {
-            withinRadius.put(player.getUniqueId(), within);
+        if (within != withinRadius.contains(player.getUniqueId())) {
+            if (within) withinRadius.add(player.getUniqueId());
+            else withinRadius.remove(player.getUniqueId());
+        }
 
-            if (!glowable(player)) return;
-
-            if (within) glow(player);
-            else deglow(player);
+        boolean shouldGlow = glowable(player) && within;
+        if (shouldGlow != glowing.contains(player.getUniqueId())) {
+            if (shouldGlow) {
+                glowing.add(player.getUniqueId());
+                glow(player);
+            } else {
+                glowing.remove(player.getUniqueId());
+                deglow(player);
+            }
         }
     }
 
     public boolean noneWithinRadius() {
-        return withinRadius.entrySet().stream().noneMatch(e -> e.getValue() && Bukkit.getPlayer(e.getKey()) != null);
+        return withinRadius.stream().noneMatch(p -> Bukkit.getPlayer(p) != null);
     }
 
     public void spawn(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(spawnPackets));
-        if (shouldGlow(player)) glow(player);
+        if (glowing.contains(player.getUniqueId())) glow(player);
     }
 
     public void destroy(Player player) {
