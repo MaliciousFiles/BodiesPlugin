@@ -47,7 +47,7 @@ public class BodySerializer {
     }
 
     public static List<BodyInfo> getAllBodies() {
-        return playerMap.values().stream().reduce(new ArrayList<>(), (a, b) -> { a.addAll(b); return a; });
+        return playerMap.values().stream().reduce(new ArrayList<>(), (a, b) -> { a.addAll(b); return a; }).stream().sorted((b1,b2) -> b1.timestamp - b2.timestamp > 0 ? 1 : -1).toList();
     }
 
     public static List<BodyInfo> getBodiesForPlayer(OfflinePlayer player) {

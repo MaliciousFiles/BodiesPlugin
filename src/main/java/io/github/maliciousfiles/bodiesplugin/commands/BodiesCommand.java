@@ -26,13 +26,13 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
     private void success(CommandSender sender, String message, Object... args) {
         Component component = Component.empty();
 
-        String[] sections = message.split("%s");
+        String[] sections = message.split("\\{}");
         for (int i = 0; i < args.length+1; i++) {
             String section = i >= sections.length ? "" : sections[i];
 
-            component = component.append(Component.text(section).color(NamedTextColor.GOLD));
+            component = component.append(Component.text(section).color(NamedTextColor.DARK_AQUA));
 
-            if (i != args.length) component = component.append(Component.text(args[i].toString()).color(NamedTextColor.DARK_RED));
+            if (i != args.length) component = component.append(Component.text(args[i].toString()).color(NamedTextColor.GOLD));
         }
 
         sender.sendMessage(component);
@@ -56,18 +56,18 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
 
     private void help(Player sender) {
         success(sender, "Bodies Help:");
-        success(sender, "  /%s %s - Show this help message", "bodies", "help");
-        success(sender, "  /%s %s <%s> - Trust a player to access your body", "bodies", "trust", "player");
-        success(sender, "  /%s %s <%s> - Untrust a player from accessing your body", "bodies", "untrust", "player");
-        success(sender, "  /%s %s <%s/%s> - Set whether to prioritize your body or player inventory", "bodies", "priority", "body", "player");
+        success(sender, "  /{} {} - Show this help message", "bodies", "help");
+        success(sender, "  /{} {} <{}> - Trust a player to access your body", "bodies", "trust", "player");
+        success(sender, "  /{} {} <{}> - Untrust a player from accessing your body", "bodies", "untrust", "player");
+        success(sender, "  /{} {} <{}/{}> - Set whether to prioritize your body or player inventory", "bodies", "priority", "body", "player");
 
         if (sender.isOp()) {
-            success(sender, "  /%s %s [%s] - List all bodies for a player", "bodies", "list", "player");
-            success(sender, "  /%s %s <%s> <%s> - Get information about a player's body", "bodies", "info", "player", "id");
-            success(sender, "  /%s %s <%s> <%s> [%s] - Remotely claim a player's body", "bodies", "claim", "player", "id", "recipient");
+            success(sender, "  /{} {} [{}] - List all bodies for a player", "bodies", "list", "player");
+            success(sender, "  /{} {} <{}> <{}> - Get information about a player's body", "bodies", "info", "player", "id");
+            success(sender, "  /{} {} <{}> <{}> [{}] - Remotely claim a player's body", "bodies", "claim", "player", "id", "recipient");
         } else {
-            success(sender, "  /%s %s - List all your bodies", "bodies", "list");
-            success(sender, "  /%s %s <%s> - Get information about a body", "bodies", "info", "id");
+            success(sender, "  /{} {} - List all your bodies", "bodies", "list");
+            success(sender, "  /{} {} <{}> - Get information about a body", "bodies", "info", "id");
         }
     }
 
@@ -89,8 +89,8 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
                 return;
             }
 
-            success(sender, "Player %s is now trusted", trusted.getName());
-            if (trusted.isOnline()) success(trusted.getPlayer(), "You are now trusted by %s", sender.getName());
+            success(sender, "Player {} is now trusted", trusted.getName());
+            if (trusted.isOnline()) success(trusted.getPlayer(), "You are now trusted by {}", sender.getName());
             SettingsSerializer.trustPlayer(sender, trusted);
         } else {
             if (!SettingsSerializer.getSettings(sender.getUniqueId()).trusted().contains(trusted.getUniqueId())) {
@@ -98,8 +98,8 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
                 return;
             }
 
-            success(sender, "Player %s is no longer trusted", trusted.getName());
-            if (trusted.isOnline()) success(trusted.getPlayer(), "You are no longer trusted by %s", sender.getName());
+            success(sender, "Player {} is no longer trusted", trusted.getName());
+            if (trusted.isOnline()) success(trusted.getPlayer(), "You are no longer trusted by {}", sender.getName());
             SettingsSerializer.untrustPlayer(sender, trusted);
         }
     }
@@ -111,10 +111,10 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args[1].equalsIgnoreCase("body")) {
-            success(sender, "Now prioritizing %s inventory contents", "body");
+            success(sender, "Now prioritizing {} inventory contents", "body");
             SettingsSerializer.setPrioritizeInv(sender, false);
         }  else if (args[1].equalsIgnoreCase("player")) {
-            success(sender, "Now prioritizing %s inventory contents", "player");
+            success(sender, "Now prioritizing {} inventory contents", "player");
             SettingsSerializer.setPrioritizeInv(sender, true);
         } else error(sender, "Invalid priority '%s'".formatted(args[1]));
     }
@@ -132,8 +132,8 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         }
         List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
 
-        if (sender.isOp()) success(sender, "Bodies for %s: (%s <%s> <%s> for more info)", op.getName(), "/bodies info", "player", "id");
-        else success(sender, "Bodies for %s: (%s <%s> for more info)", op.getName(), "/bodies info", "id");
+        if (sender.isOp()) success(sender, "Bodies for {}: ({} <{}> <{}> for more info)", op.getName(), "/bodies info", "player", "id");
+        else success(sender, "Bodies for {}: ({} <{}> for more info)", op.getName(), "/bodies info", "id");
         if (bodies.isEmpty()) {
             success(sender, "  No bodies found");
             return;
@@ -144,7 +144,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(body.timestamp);
 
-            success(sender, "  (%s) %s:%s %s-%s-%s", i, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.YEAR));
+            success(sender, "  [{}] {}:{} %s-%s-%s ({}, {}, {}, %s)".formatted(calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.YEAR), body.loc.getWorld().getName()), i, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), body.loc.getBlockX(), body.loc.getBlockY(), body.loc.getBlockZ());
         }
     }
 
@@ -181,23 +181,25 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         }
 
         BodySerializer.BodyInfo body = bodies.get(index);
-        success(sender, "Body %s for %s:", index, op.getName());
+        success(sender, "Body {} for {}:", index, op.getName());
+
+        success(sender, "  Location: ({}, {}, {}, %s)".formatted(body.loc.getWorld().getName()), body.loc.getBlockX(), body.loc.getBlockY(), body.loc.getBlockZ());
 
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(body.timestamp);
-        success(sender, "  Time: %s:%s:%s %s-%s-%s", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.YEAR));
+        success(sender, "  Time: {}:{}:{} %s-%s-%s".formatted(calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.YEAR)), calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND));
 
-        success(sender, "  Message: %s", body.message);
-        success(sender, "  Experience: %s", body.exp);
-        success(sender, "  Location: (%s,%s,%s,%s)", body.loc.getBlockX(), body.loc.getBlockY(), body.loc.getBlockZ(), body.loc.getWorld().getName());
+        success(sender, "  Message: {}", body.message);
 
         StringBuilder str = new StringBuilder("  Items: [");
         for (ItemStack item : body.items) {
             if (item == null) continue;
 
-            str.append("%s, ");
+            str.append(item.getType()).append(", ");
         }
-        success(sender, str.substring(0, str.length()-2) + "]", Arrays.stream(body.items).filter(Objects::nonNull).map(ItemStack::getType).toArray());
+        success(sender, str.substring(0, Math.max(10, str.length()-2)) + "]");
+
+        success(sender, "  Experience: {}", body.exp);
     }
 
     private void claim(Player sender, String[] args) {
@@ -237,7 +239,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        success(sender, "Claimed body %s for %s", index, op.getName());
+        success(sender, "Claimed body {} for {}", index, op.getName());
 
         BodySerializer.BodyInfo body = bodies.get(index);
         BodyHandler.claimBody(recipient, body);
