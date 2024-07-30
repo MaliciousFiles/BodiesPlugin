@@ -2,14 +2,13 @@ package io.github.maliciousfiles.bodiesplugin.serializing;
 
 import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.util.Body;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.*;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Interaction;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
@@ -143,7 +142,6 @@ public class BodySerializer {
         public final long timestamp;
         public final Body body;
         public final boolean isZombie;
-
 
         private BodyInfo(UUID player, String message, Location loc, int selectedItem, ItemStack[] items, int exp, UUID[] interactions, UUID textDisplay, long timestamp, boolean isZombie) {
             this(player, message, loc, selectedItem, items, exp, interactions, textDisplay, timestamp, new Body(loc, player, items, selectedItem), isZombie);

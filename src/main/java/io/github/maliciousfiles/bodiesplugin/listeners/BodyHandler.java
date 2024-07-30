@@ -34,7 +34,6 @@ public class BodyHandler implements Listener {
         Optional.ofNullable(body.loc.getWorld().getEntity(body.textDisplay)).ifPresent(Entity::remove);
 
         body.loc.getWorld().spawnParticle(Particle.POOF, body.loc, 3, 0, 0, 0, 0.25);
-        if (body.isZombie) body.loc.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, body.loc, 3, 0, 0, 0, 0.25);
 
         BodySerializer.removeBody(body);
     }
@@ -85,6 +84,7 @@ public class BodyHandler implements Listener {
     private static final List<String> MATERIAL_ORDER = List.of("WOODEN", "STONE", "IRON", "DIAMOND", "NETHERITE");
     public static void spawnZombie(BodySerializer.BodyInfo body) {
         destroyBody(body);
+        body.loc.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, body.loc, 3, 0, 0, 0, 0.25);
 
         Zombie zombie = (Zombie) new CustomZombie(((CraftWorld) body.loc.getWorld()).getHandle()).getBukkitEntity();
 
