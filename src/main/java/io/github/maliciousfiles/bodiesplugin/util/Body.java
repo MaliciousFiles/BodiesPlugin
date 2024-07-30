@@ -6,6 +6,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.datafixers.util.Pair;
+import io.github.maliciousfiles.bodiesplugin.serializing.SettingsSerializer;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -148,22 +149,27 @@ public class Body {
     public ClientboundBundlePacket getReplacePacket(Player player) {
         List<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         packets.addAll(replacePackets);
-        if (withinRadius.getOrDefault(player.getUniqueId(), false)) packets.addAll(zombieGlow);
+        if (shouldGlow(player)) packets.addAll(zombieGlow);
 
         return new ClientboundBundlePacket(packets);
     }
 
     public void replace(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(getReplacePacket(player));
+        if (shouldGlow(player)) glow(player);
     }
 
     private final Map<UUID, Boolean> withinRadius = new HashMap<>();
+
+    private boolean shouldGlow(Player player) {
+        return withinRadius.getOrDefault(player.getUniqueId(), false) && (player.getUniqueId() == skin || SettingsSerializer.getSettings(skin).trusted().contains(player.getUniqueId()));
+    }
 
     public void setWithinRadius(Player player, boolean within) {
         if (within != withinRadius.getOrDefault(player.getUniqueId(), false)) {
             withinRadius.put(player.getUniqueId(), within);
 
-            if (!player.getUniqueId().equals(skin)) return;
+            if (!shouldGlow(player)) return;
 
             if (within) glow(player);
             else deglow(player);
@@ -176,7 +182,7 @@ public class Body {
 
     public void spawn(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundBundlePacket(spawnPackets));
-        if (withinRadius.getOrDefault(player.getUniqueId(), false)) glow(player);
+        if (shouldGlow(player)) glow(player);
     }
 
     public void destroy(Player player) {

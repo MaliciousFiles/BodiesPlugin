@@ -4,6 +4,7 @@ import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.serializing.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.serializing.SettingsSerializer;
 import io.github.maliciousfiles.bodiesplugin.util.CustomZombie;
+import io.papermc.paper.event.entity.EntityMoveEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -16,10 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -157,6 +155,19 @@ public class BodyHandler implements Listener {
     }
 
     @EventHandler
+    public void onEntityMove(EntityMoveEvent evt) {
+        BodySerializer.BodyInfo body;
+        if ((body = BodySerializer.getZombieInfo(evt.getEntity().getUniqueId())) == null) return;
+
+        double radius = BodiesPlugin.instance.getConfig().getDouble("glowRadius");
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            body.body.setWithinRadius(player, evt.getEntity().getLocation().distanceSquared(player.getLocation()) <= radius*radius);
+        }
+
+        if (!body.body.anyWithinRadius() && evt.getEntity().isOnGround()) BodyGenerator.revertToBody((Zombie) evt.getEntity(), true);
+    }
+
+    @EventHandler
     public void onTeleport(PlayerTeleportEvent evt) {
         checkRadius(evt.getPlayer());
     }
@@ -166,6 +177,11 @@ public class BodyHandler implements Listener {
         checkRadius(evt.getPlayer());
 
         helpNewPlayer(evt.getPlayer());
+    }
+
+    @EventHandler
+    public void onLeave(PlayerQuitEvent evt) {
+        checkRadius(evt.getPlayer());
     }
 
     public static void helpNewPlayer(Player player) {
@@ -188,7 +204,7 @@ public class BodyHandler implements Listener {
             Zombie entity = (Zombie) Bukkit.getEntity(zombie);
             body.body.setWithinRadius(player, entity.getLocation().distanceSquared(player.getLocation()) <= radius*radius);
 
-            if (!body.body.anyWithinRadius()) BodyGenerator.revertToBody(entity, true);
+            if (!body.body.anyWithinRadius() && entity.isOnGround()) BodyGenerator.revertToBody(entity, true);
         }
     }
 }

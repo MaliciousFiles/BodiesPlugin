@@ -130,7 +130,8 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
         }
         List<BodySerializer.BodyInfo> bodies = BodySerializer.getBodiesForPlayer(op);
 
-        success(sender, "Bodies for %s: (%s <%s> for more info)", op.getName(), "/bodies info", "id");
+        if (sender.isOp()) success(sender, "Bodies for %s: (%s <%s> <%s> for more info)", op.getName(), "/bodies info", "player", "id");
+        else success(sender, "Bodies for %s: (%s <%s> for more info)", op.getName(), "/bodies info", "id");
         if (bodies.isEmpty()) {
             success(sender, "  No bodies found");
             return;
