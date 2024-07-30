@@ -8,6 +8,7 @@ import io.papermc.paper.event.entity.EntityMoveEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.Particle;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -33,6 +34,7 @@ public class BodyHandler implements Listener {
         Optional.ofNullable(body.loc.getWorld().getEntity(body.textDisplay)).ifPresent(Entity::remove);
 
         body.loc.getWorld().spawnParticle(Particle.POOF, body.loc, 3, 0, 0, 0, 0.25);
+        if (body.isZombie) body.loc.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, body.loc, 3, 0, 0, 0, 0.25);
 
         BodySerializer.removeBody(body);
     }
@@ -144,7 +146,7 @@ public class BodyHandler implements Listener {
                 return;
             }
 
-            if (body.isZombie && evt.getPlayer().getGameMode() != GameMode.CREATIVE) spawnZombie(body);
+            if (body.isZombie && evt.getPlayer().getGameMode() != GameMode.CREATIVE && body.loc.getWorld().getDifficulty() != Difficulty.PEACEFUL) spawnZombie(body);
             else claimBody(evt.getPlayer(), body);
         }
     }
