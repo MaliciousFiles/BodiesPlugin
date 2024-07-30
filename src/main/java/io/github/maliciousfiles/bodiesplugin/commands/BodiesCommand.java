@@ -90,6 +90,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             }
 
             success(sender, "Player %s is now trusted", trusted.getName());
+            if (trusted.isOnline()) success(trusted.getPlayer(), "You are now trusted by %s", sender.getName());
             SettingsSerializer.trustPlayer(sender, trusted);
         } else {
             if (!SettingsSerializer.getSettings(sender.getUniqueId()).trusted().contains(trusted.getUniqueId())) {
@@ -98,6 +99,7 @@ public class BodiesCommand implements CommandExecutor, TabCompleter {
             }
 
             success(sender, "Player %s is no longer trusted", trusted.getName());
+            if (trusted.isOnline()) success(trusted.getPlayer(), "You are no longer trusted by %s", sender.getName());
             SettingsSerializer.untrustPlayer(sender, trusted);
         }
     }

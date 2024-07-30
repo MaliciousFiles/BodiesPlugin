@@ -87,6 +87,9 @@ public class BodyHandler implements Listener {
         Zombie zombie = (Zombie) new CustomZombie(((CraftWorld) body.loc.getWorld()).getHandle()).getBukkitEntity();
 
         body.body.setReplacing(zombie);
+        BodySerializer.addZombie(zombie.getUniqueId(), body);
+
+        zombie.spawnAt(body.loc);
 
         zombie.setCanPickupItems(false);
         zombie.setShouldBurnInDay(false);
@@ -127,7 +130,6 @@ public class BodyHandler implements Listener {
                 body.items, body.exp, body.interactions, body.textDisplay,
                 body.timestamp, body.body, true
         ));
-        zombie.spawnAt(body.loc);
     }
 
     @EventHandler
