@@ -21,6 +21,8 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftZombie;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -87,20 +89,19 @@ public class BodyGenerator implements Listener {
             }
 
             Difficulty difficulty = evt.getPlayer().getWorld().getDifficulty();
-            boolean isZombie = evt.getPlayer().getGameMode() != GameMode.CREATIVE &&
+            boolean isZombie = evt.getDamageSource().getDamageType() != DamageType.OUT_OF_WORLD &&
+                    evt.getPlayer().getGameMode() != GameMode.CREATIVE &&
                     difficulty != Difficulty.PEACEFUL &&
                     Math.random() < BodiesPlugin.instance.getConfig().getDouble(difficulty.name().toLowerCase() + "ZombieChance");
 
-            BodySerializer.addBody(spawnBody(evt.getEntity().getUniqueId(), evt.getDeathMessage(), evt.getEntity().getLocation(), evt.getPlayer().getInventory().getHeldItemSlot(), contents, exp, isZombie));
+            spawnBody(evt.getEntity().getUniqueId(), evt.getDeathMessage(), evt.getEntity().getLocation(), evt.getPlayer().getInventory().getHeldItemSlot(), contents, exp, isZombie);
         });
     }
 
-    private static BodySerializer.BodyInfo spawnBody(UUID player, String message, Location location, int selectedItem, ItemStack[] items, int exp, boolean isZombie) {
+    private static void spawnBody(UUID player, String message, Location location, int selectedItem, ItemStack[] items, int exp, boolean isZombie) {
+        if (location.getY() < location.getWorld().getMinHeight()-1) location.setY(location.getWorld().getMinHeight()-1);
+
         Body body = new Body(location.clone(), player, items, selectedItem);
-        Bukkit.getOnlinePlayers().forEach(p -> {
-            BodyHandler.checkRadius(p);
-            body.spawn(p);
-        });
 
         UUID[] interactions = new UUID[4];
         for (int i = 0; i < 4; i++) {
@@ -121,7 +122,12 @@ public class BodyGenerator implements Listener {
         textDisplay.setAlignment(TextDisplay.TextAlignment.CENTER);
         textDisplay.text(Component.text(message));
 
-        return new BodySerializer.BodyInfo(player, message, location.clone(), selectedItem, items, exp, interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body, isZombie);
+        BodySerializer.addBody(new BodySerializer.BodyInfo(player, message, location.clone(), selectedItem, items, exp, interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body, isZombie));
+
+        Bukkit.getOnlinePlayers().forEach(p -> {
+            BodyHandler.checkRadius(p);
+            body.spawn(p);
+        });
     }
 
     @EventHandler
@@ -140,6 +146,6 @@ public class BodyGenerator implements Listener {
         if (body == null) return;
 
         BodySerializer.removeZombie(zombie.getUniqueId());
-        BodySerializer.addBody(spawnBody(body.player, body.message, zombie.getLocation(), body.selectedItem, body.items, body.exp, isZombie));
+        spawnBody(body.player, body.message, zombie.getLocation(), body.selectedItem, body.items, body.exp, isZombie);
     }
 }

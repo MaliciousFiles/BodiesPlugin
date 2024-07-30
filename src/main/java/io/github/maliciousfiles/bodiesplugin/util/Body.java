@@ -161,15 +161,19 @@ public class Body {
 
     private final Map<UUID, Boolean> withinRadius = new HashMap<>();
 
+    private boolean glowable(Player player) {
+        return player.getUniqueId().equals(skin) || SettingsSerializer.getSettings(skin).trusted().contains(player.getUniqueId());
+    }
+
     private boolean shouldGlow(Player player) {
-        return withinRadius.getOrDefault(player.getUniqueId(), false) && (player.getUniqueId().equals(skin) || SettingsSerializer.getSettings(skin).trusted().contains(player.getUniqueId()));
+        return withinRadius.getOrDefault(player.getUniqueId(), false) && glowable(player);
     }
 
     public void setWithinRadius(Player player, boolean within) {
         if (within != withinRadius.getOrDefault(player.getUniqueId(), false)) {
             withinRadius.put(player.getUniqueId(), within);
 
-            if (!shouldGlow(player)) return;
+            if (!glowable(player)) return;
 
             if (within) glow(player);
             else deglow(player);
