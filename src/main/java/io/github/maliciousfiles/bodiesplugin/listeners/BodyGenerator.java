@@ -134,7 +134,7 @@ public class BodyGenerator implements Listener {
     public void onRemoval(EntityRemoveFromWorldEvent evt) {
         if (evt.getEntity() instanceof Zombie zombie) {
             net.minecraft.world.entity.Entity.RemovalReason reason = ((CraftZombie) zombie).getHandle().getRemovalReason();
-            if (!reason.shouldDestroy()) return;
+            if (reason != null && !reason.shouldDestroy()) return;
 
             revertToBody(zombie, reason != net.minecraft.world.entity.Entity.RemovalReason.KILLED);
         }
