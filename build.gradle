@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.github.maliciousfiles'
-version = '1.0'
+version = '1.0.2'
 
 repositories {
     mavenCentral()
@@ -28,7 +28,7 @@ dependencies {
 
 paperweight.reobfArtifactConfiguration = ReobfArtifactConfiguration.Companion.MOJANG_PRODUCTION
 
-def targetJavaVersion = 23
+def targetJavaVersion = 21
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
