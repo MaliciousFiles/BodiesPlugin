@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.level.GameType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -67,7 +68,7 @@ public class Body {
                 EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER),
                 new ClientboundPlayerInfoUpdatePacket.Entry(
                         fakePlayer.getUUID(), fakePlayer.getGameProfile(), false, 0,
-                        GameType.CREATIVE, fakePlayer.getDisplayName(), null)));
+                        GameType.CREATIVE, fakePlayer.getTabListDisplayName(), fakePlayer.isModelPartShown(PlayerModelPart.HAT), fakePlayer.listOrder, null)));
 
         spawnPackets.add(new ClientboundAddEntityPacket(
                 fakePlayer.getId(),
@@ -123,7 +124,7 @@ public class Body {
                 EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER),
                 new ClientboundPlayerInfoUpdatePacket.Entry(
                         fakePlayer.getUUID(), fakePlayer.getGameProfile(), false, 0,
-                        GameType.CREATIVE, fakePlayer.getDisplayName(), null)));
+                        GameType.CREATIVE, fakePlayer.getTabListDisplayName(), fakePlayer.isModelPartShown(PlayerModelPart.HAT), fakePlayer.listOrder, null)));
 
         replacePackets.add(new ClientboundAddEntityPacket(
                 fakePlayer.getId(),
