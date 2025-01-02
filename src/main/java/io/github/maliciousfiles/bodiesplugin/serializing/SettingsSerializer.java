@@ -24,6 +24,7 @@ public class SettingsSerializer {
 
     public static PlayerSettings getSettings(UUID player) {
         playerSettings.putIfAbsent(player, new PlayerSettings());
+        serialize();
         return playerSettings.get(player);
     }
 

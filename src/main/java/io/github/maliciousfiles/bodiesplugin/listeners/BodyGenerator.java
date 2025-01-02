@@ -28,6 +28,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -44,6 +45,11 @@ public class BodyGenerator implements Listener {
         public Team.CollisionRule getCollisionRule() { return Team.CollisionRule.NEVER; }
         public Collection<String> getPlayers() { return List.of(""); }
     };
+
+    @EventHandler
+    public void onChangeWorld(PlayerChangedWorldEvent evt) {
+        BodySerializer.getAllBodies().forEach(b->b.body.spawn(evt.getPlayer()));
+    }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent evt) {

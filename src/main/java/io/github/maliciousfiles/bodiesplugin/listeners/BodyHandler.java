@@ -199,12 +199,15 @@ public class BodyHandler implements Listener {
     public static void checkRadius(Player player) {
         double radius = BodiesPlugin.instance.getConfig().getDouble("glowRadius");
         for (BodySerializer.BodyInfo body : BodySerializer.getAllBodies()) {
+            if (!body.loc.getWorld().equals(player.getWorld())) continue;
             body.body.setWithinRadius(player, body.loc.distanceSquared(player.getLocation()) <= radius*radius);
         }
 
         for (UUID zombie : BodySerializer.getAllZombies()) {
             BodySerializer.BodyInfo body = BodySerializer.getZombieInfo(zombie);
             Zombie entity = (Zombie) Bukkit.getEntity(zombie);
+
+            if (entity == null || !entity.getWorld().equals(player.getWorld())) continue;
             body.body.setWithinRadius(player, entity.getLocation().distanceSquared(player.getLocation()) <= radius*radius);
 
             if (body.body.noneWithinRadius() && entity.isOnGround()) entity.remove();
