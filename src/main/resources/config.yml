@@ -1,6 +1,9 @@
 # radius at which your bodies gain the glowing effect
 glowRadius: 20
 
+# how long until a body despawns, in minutes
+bodyDespawnTime: 180
+
 # chance for bodies to become zombies, by difficulty (set to 0 to disable)
 easyZombieChance: 0.1
 mediumZombieChance: 0.5

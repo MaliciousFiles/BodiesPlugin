@@ -3,6 +3,7 @@ package io.github.maliciousfiles.bodiesplugin.listeners;
 import io.github.maliciousfiles.bodiesplugin.BodiesPlugin;
 import io.github.maliciousfiles.bodiesplugin.serializing.BodySerializer;
 import io.github.maliciousfiles.bodiesplugin.serializing.SettingsSerializer;
+import io.github.maliciousfiles.bodiesplugin.util.Body;
 import io.github.maliciousfiles.bodiesplugin.util.CustomZombie;
 import io.papermc.paper.event.entity.EntityMoveEvent;
 import net.kyori.adventure.text.Component;
@@ -212,5 +213,12 @@ public class BodyHandler implements Listener {
 
             if (body.body.noneWithinRadius() && entity.isOnGround()) entity.remove();
         }
+    }
+
+    public static void removeAfterTime(BodySerializer.BodyInfo body) {
+        long despawnTime = BodiesPlugin.instance.getConfig().getLong("bodyDespawnTime")*60 -
+                (System.currentTimeMillis() - body.timestamp)/1000; // secs
+
+        Bukkit.getScheduler().runTaskLater(BodiesPlugin.instance, () -> destroyBody(body), despawnTime*20);
     }
 }

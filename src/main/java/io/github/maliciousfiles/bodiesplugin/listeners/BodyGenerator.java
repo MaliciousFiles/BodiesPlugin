@@ -128,7 +128,9 @@ public class BodyGenerator implements Listener {
         textDisplay.setAlignment(TextDisplay.TextAlignment.CENTER);
         textDisplay.text(Component.text(message));
 
-        BodySerializer.addBody(new BodySerializer.BodyInfo(player, message, location.clone(), selectedItem, items, exp, interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body, isZombie));
+        BodySerializer.BodyInfo info = new BodySerializer.BodyInfo(player, message, location.clone(), selectedItem, items, exp, interactions, textDisplay.getUniqueId(), System.currentTimeMillis(), body, isZombie);
+        BodySerializer.addBody(info);
+        BodyHandler.removeAfterTime(info);
 
         Bukkit.getOnlinePlayers().forEach(p -> {
             BodyHandler.checkRadius(p);

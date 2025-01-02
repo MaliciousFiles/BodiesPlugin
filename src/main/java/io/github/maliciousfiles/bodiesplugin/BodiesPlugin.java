@@ -30,7 +30,10 @@ public final class BodiesPlugin extends JavaPlugin {
 
         Bukkit.getOnlinePlayers().forEach(p -> {
             BodyHandler.checkRadius(p);
-            BodySerializer.getAllBodies().forEach(b -> b.body.spawn(p));
+            BodySerializer.getAllBodies().forEach(b -> {
+                b.body.spawn(p);
+                BodyHandler.removeAfterTime(b);
+            });
             BodyGenerator.replaceConnection(p);
             BodyHandler.helpNewPlayer(p);
         });
