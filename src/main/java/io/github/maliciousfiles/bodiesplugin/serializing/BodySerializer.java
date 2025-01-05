@@ -77,6 +77,8 @@ public class BodySerializer {
 
     public static void removeBody(BodyInfo body) {
         List<BodyInfo> bodies = playerMap.get(body.player);
+        if (bodies == null) return;
+
         bodies.remove(body);
         if (bodies.isEmpty()) playerMap.remove(body.player);
 
